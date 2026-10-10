@@ -1,0 +1,908 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Saltwhisker</title>
+<meta name="description" content="A tuxedo cat in a yellow sou&#39;wester fishes off a pixel pier for his dinner, and keeps a journal of every catch.">
+<meta name="theme-color" content="#1d3b52">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%231d3b52'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%23f3ead8'/%3E%3Crect x='7' y='3' width='2' height='10' fill='%232b2a33'/%3E%3Crect x='4' y='6' width='2' height='1' fill='%23b5453a'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=Kalam:wght@400;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f3ead8; --shade: #e6d8bc; --ink: #2b2a33; --stamp: #b5453a;
+  --tide: #2f7f7a; --deep: #1d3b52; --gold: #ffcf6b; --muted: #6b5c49;
+}
+html, body { margin: 0; height: 100%; background: #0b1030; overflow: hidden; overscroll-behavior: none; }
+body {
+  font-family: 'Pixelify Sans', system-ui, sans-serif; color: var(--ink);
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+button { font-family: inherit; color: var(--ink); cursor: pointer; pointer-events: auto; }
+button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+.hud {
+  position: fixed; inset: 0; pointer-events: none; box-sizing: border-box;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.chip {
+  height: 44px; padding: 0 14px; display: flex; align-items: center; gap: 10px;
+  background: var(--paper); border: 3px solid var(--ink); box-sizing: border-box;
+  font-size: 17px; font-weight: 600; white-space: nowrap;
+}
+.chip svg { flex-shrink: 0; }
+.topwrap { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.topwrap .top { align-self: stretch; }
+.dinner { height: 40px; font-size: 16px; gap: 8px; }
+.pips { display: flex; gap: 4px; }
+.pip { width: 12px; height: 12px; box-sizing: border-box; border: 2px solid #b9a787; background: var(--shade); }
+.pip.on { background: #e0703a; border-color: var(--ink); }
+.panel {
+  align-self: center; width: min(100%, 360px); box-sizing: border-box; padding: 14px 16px;
+  background: rgba(243, 234, 216, 0.94); border: 3px solid var(--ink); box-shadow: 0 5px 0 var(--ink);
+  display: flex; flex-direction: column; gap: 10px;
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .panel { align-self: flex-end; width: 300px; }
+}
+.row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.label { font-size: 18px; font-weight: 700; letter-spacing: 1px; }
+.small { font-family: 'Courier Prime', monospace; font-size: 14px; font-weight: 700; }
+.msg { margin: 0; font-family: 'Kalam', cursive; font-size: 19px; line-height: 1.3; text-align: center; color: #3d3a40; }
+.meter { position: relative; height: 22px; border: 3px solid var(--ink); background: var(--shade); box-sizing: border-box; overflow: visible; }
+.meter .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--tide); }
+.meter .zone { position: absolute; top: 0; bottom: 0; }
+.meter .mark { position: absolute; top: -8px; width: 6px; height: 32px; margin-left: -3px; background: var(--ink); }
+[hidden] { display: none !important; }
+
+.overlay {
+  position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(8, 12, 32, 0.55); pointer-events: auto; padding: 16px; box-sizing: border-box;
+}
+.card {
+  position: relative; width: min(100%, 360px); max-height: 100%; overflow: auto; box-sizing: border-box;
+  background: var(--paper); border: 3px solid var(--ink); box-shadow: 0 8px 0 rgba(0,0,0,0.35);
+  padding: 24px 20px 20px; display: flex; flex-direction: column; gap: 12px;
+  font-family: 'Courier Prime', monospace;
+}
+.stamp {
+  position: absolute; top: 10px; right: 14px; padding: 4px 10px; border: 3px solid var(--stamp); color: var(--stamp);
+  background: var(--paper); font-family: 'Pixelify Sans', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 2px; transform: rotate(6deg);
+}
+.sketch {
+  height: 180px; border: 3px dashed var(--stamp); display: flex; align-items: center; justify-content: center;
+  text-align: center; padding: 10px; box-sizing: border-box; font-family: 'Kalam', cursive; font-size: 18px; color: var(--stamp);
+}
+.fishname { margin: 0; font-family: 'Kalam', cursive; font-weight: 700; font-size: 30px; line-height: 1.1; color: var(--deep); }
+.facts { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 15px; font-weight: 700; }
+.note { margin: 0; font-family: 'Kalam', cursive; font-size: 19px; line-height: 1.35; color: #3d3a40; }
+.btn {
+  min-height: 52px; border: 3px solid var(--ink); box-shadow: 0 5px 0 var(--ink); background: var(--paper);
+  font-size: 20px; font-weight: 700; letter-spacing: 1px;
+}
+.btn.primary { background: var(--gold); }
+.btn:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--ink); }
+
+.journal {
+  position: fixed; inset: 0; background: var(--paper); pointer-events: auto; overflow: auto;
+  padding: max(16px, env(safe-area-inset-top)) 16px 32px; box-sizing: border-box; font-family: 'Courier Prime', monospace;
+}
+.jhead { display: flex; align-items: center; gap: 14px; max-width: 640px; margin: 0 auto; }
+.jhead h1 { margin: 0; font-size: 24px; letter-spacing: 2px; color: var(--deep); font-family: 'Pixelify Sans', sans-serif; }
+.sq { width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: transparent; border: 3px solid var(--ink); padding: 0; }
+.grid { max-width: 640px; margin: 18px auto 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
+.slot {
+  min-height: 120px; padding: 8px; box-sizing: border-box; border: 3px solid var(--ink); background: #fbf6ea;
+  display: flex; flex-direction: column; gap: 4px; text-align: left; font-family: 'Courier Prime', monospace;
+}
+.slot .mini { flex-grow: 1; min-height: 40px; border: 2px dashed #c98d84; display: flex; align-items: center; justify-content: center; font-family: 'Kalam', cursive; font-size: 13px; color: var(--stamp); }
+.slot.missing { background: var(--shade); border-style: dashed; border-color: #b9a787; align-items: center; justify-content: center; text-align: center; cursor: default; }
+.slot .q { font-family: 'Pixelify Sans', sans-serif; font-size: 30px; font-weight: 700; color: #a8956f; }
+.slot .no { font-size: 11px; color: var(--muted); }
+.slot .nm { font-family: 'Kalam', cursive; font-size: 15px; font-weight: 700; line-height: 1.05; }
+.slot .hint { font-family: 'Kalam', cursive; font-size: 14px; color: #5a4a3a; }
+.detail { max-width: 520px; margin: 18px auto 0; display: flex; flex-direction: column; gap: 12px; }
+.detail .sketch { height: 240px; }
+
+.debug {
+  position: fixed; left: 8px; bottom: 8px; display: flex; flex-wrap: wrap; gap: 4px; max-width: 260px; pointer-events: auto;
+  font-family: 'Courier Prime', monospace; font-size: 12px; background: rgba(0,0,0,0.6); padding: 6px; color: #fff;
+}
+.debug button { font-size: 12px; padding: 4px 6px; min-height: 28px; }
+</style>
+</head>
+<body>
+<canvas id="game" aria-label="A tuxedo cat fishing off the end of a pier" role="img"></canvas>
+
+<div class="hud">
+  <div class="topwrap">
+  <div class="top">
+    <div class="chip" id="clock"><span id="clockIcon"></span><span id="clockText">DAY 1 · 2:00 PM</span></div>
+    <button class="chip" id="journalBtn" aria-label="Open journal">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4z"/><path d="M20 4h-4a3 3 0 0 0-3 3"/><path d="M20 4v14h-6"/></svg>
+      <span id="foundCount">0/15</span>
+    </button>
+  </div>
+  <div class="chip dinner" id="dinnerChip"><span id="dinnerLabel">DINNER</span><span class="pips" id="dinnerPips"></span><span class="small" id="dinnerRight">by 8 PM</span></div>
+  </div>
+  <div class="panel" id="panel">
+    <div class="row" id="meterRow" hidden><span class="label" id="meterLabel">CAST POWER</span><span class="small" id="meterRight"></span></div>
+    <div class="meter" id="meter" hidden>
+      <div class="zone" id="zoneSweet" style="background:#7fbfb5"></div>
+      <div class="zone" id="zoneSnap" style="background:#d98a7f"></div>
+      <div class="fill" id="meterFill"></div>
+      <div class="mark" id="meterMark" hidden></div>
+    </div>
+    <p class="msg" id="msg">Hold anywhere to wind up. Let go to cast.</p>
+  </div>
+</div>
+
+<div class="overlay" id="catchOverlay" hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="catchName">
+    <div class="stamp" id="catchStamp">NEW ENTRY</div>
+    <div class="row small" style="color:var(--muted)"><span id="catchNo">No. 001</span><span id="catchWhen"></span></div>
+    <div class="sketch" id="catchSketch">[Drawing coming soon]</div>
+    <h2 class="fishname" id="catchName">Pier Perch</h2>
+    <div class="facts" id="catchFacts"></div>
+    <p class="note" id="catchNote"></p>
+    <button class="btn primary" id="keepFishing">KEEP FISHING</button>
+    <button class="btn" id="catchToJournal">OPEN JOURNAL</button>
+  </div>
+</div>
+
+<div class="journal" id="journal" hidden>
+  <div class="jhead">
+    <button class="sq" id="journalBack" aria-label="Back">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <div>
+      <h1 id="journalTitle">MY TIDEBOOK</h1>
+      <div class="small" style="color:var(--muted)" id="journalSub"></div>
+    </div>
+  </div>
+  <div class="grid" id="journalGrid"></div>
+  <div class="detail" id="journalDetail" hidden></div>
+</div>
+
+<div class="debug" id="debug" hidden></div>
+
+<script>
+'use strict';
+
+/* ---------- Tuning knobs ---------- */
+const TUNE = {
+  minutesPerSecond: 2,     // game clock speed: 2 means one game day every 12 real minutes
+  startHour: 14,           // where a brand new save starts
+  chargeTime: 1.1,         // seconds for the power bar to go from empty to full (then it falls back)
+  flightTime: 0.7,         // seconds the bobber is in the air
+  waitMin: 2.5,            // seconds before a bite, at least
+  waitMax: 7,              // and at most
+  nibbleChance: 0.6,       // chance of fake nibbles before the real bite
+  biteWindow: 0.9,         // seconds to tap after the bobber dips
+  reelSpeed: 2.4,          // meters per second while holding
+  sweetBonus: 1.5,         // reel speed multiplier inside the sweet zone
+  strengthDrag: 0.25,      // how much a strong fish slows your reeling
+  tireTime: 18,            // seconds for a fish to tire to half strength
+  tensionUp: 0.55,         // tension per second while holding (scaled by fish strength)
+  tensionDown: 0.7,        // tension per second while not holding
+  surgeEvery: [1.2, 3],    // seconds between fish surges
+  surgePower: 1.8,         // extra tension per second during a surge (times strength)
+  surgeLength: 0.45,
+  pullOut: 0.9,            // meters per second a fish takes when you are not reeling (times strength)
+  slackEscape: 2.2,        // seconds of slack line before the fish gets away
+  sweet: [0.3, 0.68],      // sweet zone on the tension bar
+  rainChance: 0.3,         // chance each new game day is rainy
+  dailyBoost: 3,           // today's fish is this many times more likely
+  dinnerGoal: 4,           // dinner points Saltwhisker needs each evening
+  dinnerStart: 6,          // dinner window opens (game hour)
+  dinnerHour: 20,          // and closes: catch enough by 8 PM
+};
+
+/* ---------- Fish ---------- */
+// time: any | day | dusk | night   depth: any | near | mid | far   weather: any | rain
+const FISH = [
+  { id: 1,  name: 'Pier Perch',          time: 'any',   depth: 'any',  w: 10,  size: [12, 25],  str: 0.2,  rarity: 'Common',    note: 'Tastes like pier. Would eat again.', hint: 'anytime' },
+  { id: 2,  name: 'Sulky Sardine',       time: 'day',   depth: 'near', w: 8,   size: [8, 15],   str: 0.15, rarity: 'Common',    note: 'Sighed when caught. Small, but dinner is dinner.', hint: 'daytime, close in' },
+  { id: 3,  name: 'Drizzle Darter',      time: 'any',   depth: 'any',  w: 6,   size: [14, 22],  str: 0.3,  rarity: 'Uncommon',  note: 'Only comes up in the rain. I hate the rain. Worth it.', hint: 'rainy days', weather: 'rain' },
+  { id: 4,  name: 'Bucket Crab',         time: 'any',   depth: 'near', w: 7,   size: [10, 18],  str: 0.25, rarity: 'Common',    note: 'Not a fish. Pinched my nose. Not eating it.', hint: 'close to the pier', refuse: true },
+  { id: 5,  name: 'Gull Snack',          time: 'day',   depth: 'mid',  w: 6,   size: [15, 22],  str: 0.2,  rarity: 'Common',    note: 'The gulls wanted this one. Too bad, gulls.', hint: 'daytime' },
+  { id: 6,  name: 'Dusky Flounder',      time: 'dusk',  depth: 'any',  w: 5,   size: [30, 45],  str: 0.4,  rarity: 'Uncommon',  note: 'Flat. Judgy. Delicious.', hint: 'dusk only' },
+  { id: 7,  name: 'Grumble Grouper',     time: 'any',   depth: 'mid',  w: 4,   size: [35, 55],  str: 0.55, rarity: 'Uncommon',  note: 'Grumbled the whole way up. So did I.', hint: 'a medium cast' },
+  { id: 8,  name: 'Lamplight Grouper',   time: 'night', depth: 'near', w: 3,   size: [40, 60],  str: 0.5,  rarity: 'Rare',      note: 'Only bites when the lamp is on. Looked personally offended to be caught.', hint: 'night, under the lamp' },
+  { id: 9,  name: 'Longline Tuna',       time: 'any',   depth: 'far',  w: 3,   size: [60, 90],  str: 0.75, rarity: 'Rare',      note: 'Needed all four paws. Dinner for a week.', hint: 'cast far' },
+  { id: 10, name: 'Sock Eel',            time: 'night', depth: 'mid',  w: 4,   size: [30, 70],  str: 0.45, rarity: 'Uncommon',  note: 'Looks like a lost sock. Tastes slightly better.', hint: 'night' },
+  { id: 11, name: 'Lanternfish',         time: 'night', depth: 'far',  w: 2,   size: [20, 30],  str: 0.5,  rarity: 'Rare',      note: 'Brought its own light. Too pretty to eat.', hint: 'night, far out', refuse: true },
+  { id: 12, name: 'Tiny Admiral',        time: 'day',   depth: 'any',  w: 2,   size: [5, 8],    str: 0.1,  rarity: 'Rare',      note: 'Wears a hat. Respect. Let it go.', hint: 'daytime, if lucky', refuse: true },
+  { id: 13, name: 'Sunday Snapper',      time: 'any',   depth: 'any',  w: 4,   size: [25, 40],  str: 0.4,  rarity: 'Rare',      note: 'Only shows up on Sundays. Dressed for it. So was I.', hint: 'Sundays', sunday: true },
+  { id: 14, name: 'Old Boot Bass',       time: 'dusk',  depth: 'far',  w: 0.6, size: [70, 100], str: 0.9,  rarity: 'Legendary', note: 'Might be a boot. Did not eat.', hint: 'legendary', refuse: true },
+  { id: 15, name: 'The Pier Ghost',      time: 'night', depth: 'far',  w: 0.4, size: [80, 120], str: 0.95, rarity: 'Legendary', note: 'Nobody believes me. Not eating a ghost.', hint: 'legendary', weather: 'rain', refuse: true },
+];
+
+/* ---------- Save ---------- */
+const SAVE_KEY = 'saltwhisker.save';
+function freshSave() { return { v: 1, gm: TUNE.startHour * 60, weather: 'clear', dayRolled: 1, found: {}, dinner: { key: 1, pts: 0, done: false, judged: false }, streak: 0, best: 0 }; }
+function loadSave() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if (s && s.v === 1 && s.found) { if (!s.dinner) { s.dinner = { key: 0, pts: 0, done: false, judged: false }; s.streak = 0; s.best = 0; } return s; }
+  } catch (e) {}
+  return freshSave();
+}
+let SAVE = loadSave();
+function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); } catch (e) {} }
+
+/* ---------- Helpers ---------- */
+const rand = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function hexToRgb(h) { return [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)); }
+function mixHex(a, b, t) {
+  const pa = hexToRgb(a), pb = hexToRgb(b);
+  return '#' + pa.map((v, i) => Math.round(v + (pb[i] - v) * t).toString(16).padStart(2, '0')).join('');
+}
+function todayISO() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function dailyFishId() {
+  // Same fish for everyone on the same calendar day. Legendaries never.
+  const s = todayISO().split('-').join('');
+  let h = 0; for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const pool = FISH.filter(f => f.rarity !== 'Legendary' && !f.sunday);
+  return pool[h % pool.length].id;
+}
+const DAILY = dailyFishId();
+
+/* ---------- Clock and palettes ---------- */
+const PAL = {
+  day:   { top: '#6fb8dc', bot: '#cdeef2', sun: '#fff1b8', sunY: 0,   sea: '#2e86ab', seaDeep: '#1f6488', seaDeeper: '#164a68', wave: '#9fdbe8', wood: '#8a5a3b', woodLight: '#b98a5e', woodDark: '#5a3824', post: '#4a2f1e', cloud: '#ffffff', land: '#5b8f7a', line: '#ffffff', stars: 0,    glow: 0,    gull: 1, glint: 0.5,  shadow: 0.22 },
+  dusk:  { top: '#433a78', bot: '#f6a463', sun: '#ffd38a', sunY: 30,  sea: '#5b5a93', seaDeep: '#413f74', seaDeeper: '#2b2a55', wave: '#f3b88f', wood: '#64402e', woodLight: '#93603f', woodDark: '#3f271a', post: '#2e1c13', cloud: '#f7b99a', land: '#3d3560', line: '#fbe7d4', stars: 0.35, glow: 0.12, gull: 1, glint: 0.8,  shadow: 0.25 },
+  night: { top: '#0b1030', bot: '#26365f', sun: '#f4e9c1', sunY: -12, sea: '#17324f', seaDeep: '#10253d', seaDeeper: '#0a182a', wave: '#55779f', wood: '#3e2d2b', woodLight: '#5d443b', woodDark: '#271b1a', post: '#1c1313', cloud: '#2f3c66', land: '#141b38', line: '#c9d6ea', stars: 1,    glow: 0.2,  gull: 0, glint: 0.35, shadow: 0.35 },
+};
+const KEYS = [[0, 'night'], [5, 'night'], [7, 'day'], [16.5, 'day'], [18.5, 'dusk'], [20, 'night'], [24, 'night']];
+function hourOf(gm) { return (gm / 60) % 24; }
+function dayOf(gm) { return Math.floor(gm / 1440) + 1; }
+function periodOf(h) { return h >= 6 && h < 17.5 ? 'day' : h >= 17.5 && h < 19.5 ? 'dusk' : 'night'; }
+function paletteAt(h) {
+  let i = 0; while (i < KEYS.length - 2 && h >= KEYS[i + 1][0]) i++;
+  const [h0, p0] = KEYS[i], [h1, p1] = KEYS[i + 1];
+  const t = h1 === h0 ? 0 : clamp((h - h0) / (h1 - h0), 0, 1);
+  const A = PAL[p0], B = PAL[p1], out = {};
+  for (const k in A) out[k] = typeof A[k] === 'number' ? lerp(A[k], B[k], t) : mixHex(A[k], B[k], t);
+  return out;
+}
+
+/* ---------- Canvas ---------- */
+const cv = document.getElementById('game');
+const ctx = cv.getContext('2d');
+const CAM = { x: 78, y: 52, w: 72, h: 72, maxScale: 9 };   // focus box in world pixels: smaller = more zoomed in
+let W = 0, H = 0, DPR = 1, SC = 1, OX = 0, OY = 0, VW = 200, VH = 200;
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 3);
+  W = window.innerWidth; H = window.innerHeight;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  // Camera: always show the whole focus box (cat, rod, bobber, near water) as big as it fits,
+  // and fill the rest of the screen with more of the world.
+  SC = Math.min(W / CAM.w, H / CAM.h, CAM.maxScale);
+  SC = Math.max(1, Math.floor(SC * DPR)) / DPR;   // whole device pixels per world pixel: no seams between pixels
+  VW = W / SC; VH = H / SC;
+  OX = CAM.x + CAM.w / 2 - VW / 2; OY = CAM.y + CAM.h / 2 - VH / 2;
+}
+window.addEventListener('resize', resize);
+resize();
+
+/* ---------- Game state ---------- */
+const TIP = { x: 132, y: 60 };     // rod tip at rest
+const HAND = { x: 111.5, y: 79.5 };   // Saltwhisker's raised paw
+const CAT = { x: 96, y: 70 };
+const S = {
+  state: 'idle',       // idle | charging | flying | waiting | bite | reeling | caught | message
+  t: 0,                // seconds in the current state
+  power: 0,
+  holding: false,
+  bob: { x: 0, y: 0, tx: 0 },
+  waitAt: 0, nibbles: [], lastNibble: -9,
+  fish: null, depth: 'near',
+  dist: 0, startDist: 0, tension: 0, slack: 0, surgeIn: 0, surgeLeft: 0,
+  shadow: null,
+  msgUntil: 0,
+  shake: 0,
+  splashes: [],
+  rain: [],
+  catches: 0, escapes: 0, snaps: 0,
+};
+function setState(s) { S.state = s; S.t = 0; }
+
+function depthFromPower(p) { return p < 0.35 ? 'near' : p < 0.7 ? 'mid' : 'far'; }
+function castRange() {
+  const left = 120, right = Math.min(OX + VW - 8, 172);
+  return [left, Math.max(left + 12, right)];
+}
+function isSunday() { return new Date().getDay() === 0; }
+function pickFish() {
+  const per = periodOf(hourOf(SAVE.gm));
+  const pool = FISH.filter(f =>
+    (f.time === 'any' || f.time === per) &&
+    (f.depth === 'any' || f.depth === S.depth) &&
+    (!f.weather || f.weather === SAVE.weather) &&
+    (!f.sunday || isSunday()));
+  let total = 0;
+  const ws = pool.map(f => { const w = f.w * (f.id === DAILY ? TUNE.dailyBoost : 1); total += w; return w; });
+  let r = Math.random() * total;
+  for (let i = 0; i < pool.length; i++) { r -= ws[i]; if (r <= 0) return pool[i]; }
+  return pool[0];
+}
+
+/* ---------- Input ---------- */
+function press() {
+  if (S.holding) return;
+  S.holding = true;
+  switch (S.state) {
+    case 'idle': case 'message':
+      setState('charging'); S.power = 0; break;
+    case 'waiting':
+      if (S.t - S.lastNibble < 0.35) say('Too early! It swam off.', 1.6);
+      else say('Reeled in. Nothing yet.', 1.2);
+      break;
+    case 'bite':
+      hook(); break;
+  }
+}
+function release() {
+  if (!S.holding) return;
+  S.holding = false;
+  if (S.state === 'charging') cast();
+}
+function isUiTarget(e) { return e.target.closest && e.target.closest('button, .overlay, .journal, .debug'); }
+window.addEventListener('pointerdown', e => { if (isUiTarget(e)) return; e.preventDefault(); press(); });
+window.addEventListener('pointerup', release);
+window.addEventListener('pointercancel', release);
+window.addEventListener('keydown', e => {
+  if (e.code !== 'Space' || e.repeat) return;
+  if (!document.getElementById('journal').hidden || !document.getElementById('catchOverlay').hidden) return;
+  e.preventDefault(); press();
+});
+window.addEventListener('keyup', e => { if (e.code === 'Space') release(); });
+window.addEventListener('contextmenu', e => e.preventDefault());
+
+/* ---------- Actions ---------- */
+function say(text, secs) {
+  setState('message'); S.msgUntil = secs; S.shadow = null; S.fish = null;
+  ui.msg = text;
+}
+function cast() {
+  const p = S.power;
+  S.depth = depthFromPower(p);
+  const [a, b] = castRange();
+  S.bob.tx = lerp(a, b, p);
+  S.bob.sx = TIP.x; S.bob.sy = TIP.y + 4;
+  setState('flying');
+}
+function startWaiting() {
+  setState('waiting');
+  S.waitAt = rand(TUNE.waitMin, TUNE.waitMax);
+  S.nibbles = [];
+  if (Math.random() < TUNE.nibbleChance) {
+    const n = 1 + (Math.random() < 0.4 ? 1 : 0);
+    for (let i = 0; i < n; i++) S.nibbles.push(rand(S.waitAt * 0.45, S.waitAt - 0.6));
+  }
+  S.lastNibble = -9;
+  S.fish = pickFish();
+  const fromLeft = Math.random() < 0.5;
+  const sz = clamp(S.fish.size[1] / 10, 4, 14);
+  S.shadow = { x: S.bob.x + (fromLeft ? -40 : 40), y: rand(112, 124), w: sz, show: false };
+}
+function hook() {
+  setState('reeling');
+  const f = S.fish;
+  S.startDist = 5 + S.power * 15;
+  S.dist = S.startDist;
+  S.tension = 0.35; S.slack = 0;
+  S.surgeIn = rand(TUNE.surgeEvery[0], TUNE.surgeEvery[1]); S.surgeLeft = 0;
+  S.reelFrom = S.bob.x;
+}
+function landFish() {
+  const f = S.fish;
+  const size = Math.round(rand(f.size[0], f.size[1]));
+  const rec = SAVE.found[f.id];
+  const isNew = !rec;
+  const isRecord = !isNew && size > rec.best;
+  if (isNew) SAVE.found[f.id] = { n: 1, best: size, first: todayISO() };
+  else { rec.n++; if (isRecord) rec.best = size; }
+  let dinnerNote = '';
+  const D = SAVE.dinner;
+  if (f.refuse) dinnerNote = 'Won\'t eat it';
+  else if (!dinnerOpen(SAVE.gm)) dinnerNote = 'Midnight snack';
+  else if (D.done) dinnerNote = 'Extra helping';
+  else {
+    const pts = dinnerPoints(size);
+    D.pts = Math.min(TUNE.dinnerGoal, D.pts + pts);
+    dinnerNote = '+' + pts + ' dinner';
+    if (D.pts >= TUNE.dinnerGoal) { D.done = true; SAVE.streak++; SAVE.best = Math.max(SAVE.best, SAVE.streak); dinnerNote = 'Dinner served!'; }
+  }
+  persist();
+  S.catches++;
+  showCatch(f, size, isNew, isRecord, dinnerNote);
+  setState('caught');
+  S.shadow = null;
+  updateFound();
+}
+function lose(text, snap) {
+  if (snap) { S.snaps++; S.shake = reduceMotion ? 0 : 0.35; } else S.escapes++;
+  say(text, 1.8);
+}
+
+
+/* ---------- Dinner ---------- */
+function dinnerKey(gm) { const h = hourOf(gm); return h >= TUNE.dinnerStart ? dayOf(gm) : dayOf(gm) - 1; }
+function dinnerOpen(gm) { const h = hourOf(gm); return h >= TUNE.dinnerStart && h < TUNE.dinnerHour; }
+function dinnerPoints(size) { return clamp(Math.round(size / 20), 1, 3); }
+function tickDinner() {
+  const k = dinnerKey(SAVE.gm), D = SAVE.dinner;
+  if (D.key !== k) { SAVE.dinner = { key: k, pts: 0, done: false, judged: false }; return; }
+  if (!D.judged && !dinnerOpen(SAVE.gm) && hourOf(SAVE.gm) >= TUNE.dinnerHour) {
+    D.judged = true;
+    if (!D.done) {
+      SAVE.streak = 0;
+      if (S.state === 'idle' || S.state === 'message') say('8 PM and no dinner. Saltwhisker sulks. Night fish are snacks only.', 3);
+    }
+    persist();
+  }
+}
+
+/* ---------- Update ---------- */
+let rainTimer = 0;
+function update(dt) {
+  S.t += dt;
+  // clock
+  const prevDay = dayOf(SAVE.gm);
+  SAVE.gm += dt * TUNE.minutesPerSecond;
+  const d = dayOf(SAVE.gm);
+  if (d !== prevDay && SAVE.dayRolled !== d) {
+    SAVE.dayRolled = d;
+    SAVE.weather = Math.random() < TUNE.rainChance ? 'rain' : 'clear';
+  }
+  if (S.shake > 0) S.shake -= dt;
+  tickDinner();
+
+  switch (S.state) {
+    case 'charging': {
+      const cyc = (S.t / TUNE.chargeTime) % 2;       // up then back down
+      S.power = cyc <= 1 ? cyc : 2 - cyc;
+      break;
+    }
+    case 'flying': {
+      const k = clamp(S.t / TUNE.flightTime, 0, 1);
+      S.bob.x = lerp(S.bob.sx, S.bob.tx, k);
+      S.bob.y = lerp(S.bob.sy, 102, k) - Math.sin(k * Math.PI) * (16 + S.power * 18);
+      if (k >= 1) { S.bob.y = 102; splash(S.bob.x, 102, 6); startWaiting(); }
+      break;
+    }
+    case 'waiting': {
+      const sh = S.shadow;
+      if (S.t > S.waitAt - 3) sh.show = true;
+      if (sh.show) {
+        const k = clamp((S.t - (S.waitAt - 3)) / 3, 0, 1);
+        sh.cx = lerp(sh.x, S.bob.x - sh.w / 2, k);
+      }
+      for (const n of S.nibbles) if (S.t >= n && S.t - dt < n) S.lastNibble = S.t;
+      if (S.t >= S.waitAt) { setState('bite'); splash(S.bob.x, 102, 4); }
+      break;
+    }
+    case 'bite':
+      if (S.t > TUNE.biteWindow) say('Too slow. It stole the bait.', 1.6);
+      break;
+    case 'reeling': {
+      const f = S.fish;
+      const str = f.str * (1 - 0.5 * Math.min(1, S.t / TUNE.tireTime));   // fish tire as the fight goes on
+      const sweet = S.tension >= TUNE.sweet[0] && S.tension <= TUNE.sweet[1];
+      // surges
+      S.surgeIn -= dt;
+      if (S.surgeIn <= 0) { S.surgeLeft = TUNE.surgeLength; S.surgeIn = rand(TUNE.surgeEvery[0], TUNE.surgeEvery[1]); }
+      let surge = 0;
+      if (S.surgeLeft > 0) { S.surgeLeft -= dt; surge = TUNE.surgePower * str; }
+      if (S.holding) {
+        S.tension += (TUNE.tensionUp * (0.6 + str) + surge) * dt;
+        S.dist -= TUNE.reelSpeed * (sweet ? TUNE.sweetBonus : 1) * (1 - str * TUNE.strengthDrag) * dt;
+      } else {
+        S.tension += (surge * 0.6 - TUNE.tensionDown) * dt;
+        S.dist += TUNE.pullOut * str * dt;
+      }
+      S.tension = clamp(S.tension, 0, 1.2);
+      if (S.tension < 0.08) S.slack += dt; else S.slack = 0;
+      const k = clamp(1 - S.dist / S.startDist, 0, 1);
+      S.bob.x = lerp(S.reelFrom, 113, k);
+      S.bob.y = 102 + Math.sin(S.t * 18) * (reduceMotion ? 0.2 : 0.6);
+      if (Math.random() < dt * 8) splash(S.bob.x + rand(-2, 2), 102, 1);
+      if (S.tension >= 1) lose('Snap! The line broke.', true);
+      else if (S.slack > TUNE.slackEscape || S.dist > S.startDist * 1.35) lose('Too much slack. It got away.', false);
+      else if (S.dist <= 0) landFish();
+      break;
+    }
+    case 'message':
+      if (S.t > S.msgUntil) setState('idle');
+      break;
+  }
+
+  // splashes
+  for (const p of S.splashes) { p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 60 * dt; }
+  S.splashes = S.splashes.filter(p => p.t < 0.6);
+
+  // rain drops
+  if (SAVE.weather === 'rain') {
+    rainTimer += dt;
+    while (S.rain.length < 70) S.rain.push({ x: rand(OX - 20, OX + VW + 20), y: rand(OY - 20, OY + VH) });
+    for (const r of S.rain) { r.x -= 25 * dt; r.y += 150 * dt; if (r.y > 200) { r.y = OY - 10; r.x = rand(OX - 10, OX + VW + 30); } }
+  } else S.rain.length = 0;
+}
+function splash(x, y, n) {
+  for (let i = 0; i < n; i++) S.splashes.push({ x, y, vx: rand(-14, 14), vy: rand(-40, -15), t: 0 });
+}
+
+
+/* ---------- Saltwhisker sprite (16 x 16, facing right) ---------- */
+const CAT_MAP = [
+  '.........K...K..',
+  '........YKYYYKY.',
+  '.......YYYYYYYY.',
+  '......yYYYYYYYYY',
+  '......yyKKKKEKK.',
+  '.......yKKKWWWP.',
+  '........KKKWWW..',
+  '......KKKKKWWK..',
+  '.....KKKKKKWWWK.',
+  '....KKKKKKKWWWWW',
+  'K...KKKKKKKWWWK.',
+  'K..KKKKKKKKWWWK.',
+  'KK.KKKKKKKKKWWK.',
+  '.KKKKKKKKKKKKKK.',
+  '..KKKKKKKKKKKKK.',
+  '...KKKKKWW.WW...',
+];
+const CAT_COL = { K: '#1b1a22', W: '#f4f1ea', E: '#ffd23f', P: '#e58a9a', Y: '#ffcf3a', y: '#c98f17' };
+const CAT_RUNS = CAT_MAP.map(row => { const r = []; let x = 0; while (x < row.length) { const c = row[x]; if (c === '.') { x++; continue; } const x0 = x; while (x < row.length && row[x] === c) x++; r.push([x0, x - x0, c]); } return r; });
+function catPose() {
+  // cues: ears perk on a nibble, ears up and tail puffed on a bite, crouch when the line is tight
+  const nibble = S.state === 'waiting' && S.t - S.lastNibble < 0.3;
+  const bite = S.state === 'bite';
+  const crouch = S.state === 'reeling' && (S.tension > 0.75 || S.surgeLeft > 0);
+  const swish = !reduceMotion && Math.floor(performance.now() / 900) % 2 === 1;
+  return { ears: nibble || bite, puff: bite, crouch, swish: swish && !bite };
+}
+function catPixels(pose) {
+  // list of [x, y, w, color] in sprite space
+  const px = [];
+  CAT_RUNS.forEach((runs, y) => {
+    const dy = pose.crouch && y <= 7 ? 1 : 0;
+    for (const [x, w, c] of runs) {
+      if (pose.swish && y === 10 && x === 0) { px.push([1, 10, 1, 'K']); continue; }
+      px.push([x, y + dy, w, c]);
+    }
+  });
+  if (pose.ears) { px.push([9, -1 + (pose.crouch ? 1 : 0), 1, 'K']); px.push([13, -1 + (pose.crouch ? 1 : 0), 1, 'K']); }
+  if (pose.puff) { px.push([-1, 9, 2, 'K']); px.push([-1, 10, 1, 'K']); px.push([-1, 11, 1, 'K']); px.push([1, 10, 1, 'K']); px.push([1, 11, 1, 'K']); }
+  return px;
+}
+function drawCat(P) {
+  const pose = catPose(), px = catPixels(pose);
+  // night rim light so a black cat still reads against a dark sky
+  const rim = clamp((P.stars - 0.4) / 0.6, 0, 1);
+  if (rim > 0.05) {
+    ctx.globalAlpha = rim * 0.85;
+    for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1]]) for (const [x, y, w] of px) R(CAT.x + x + dx, CAT.y + y + dy, w, 1, '#5d6a9a');
+    ctx.globalAlpha = 1;
+  }
+  for (const [x, y, w, c] of px) R(CAT.x + x, CAT.y + y, w, 1, CAT_COL[c]);
+}
+
+/* ---------- Draw ---------- */
+function R(x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); }
+function draw() {
+  const h = hourOf(SAVE.gm);
+  const P = paletteAt(h);
+  const rainy = SAVE.weather === 'rain';
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = P.top; ctx.fillRect(0, 0, cv.width, cv.height);
+  let sx = 0, sy = 0;
+  if (S.shake > 0) { sx = rand(-1, 1); sy = rand(-1, 1); }
+  ctx.setTransform(SC * DPR, 0, 0, SC * DPR, (-OX + sx) * SC * DPR, (-OY + sy) * SC * DPR);
+  ctx.imageSmoothingEnabled = false;
+
+  // sky bands
+  const g = rainy ? 0.35 : 0;
+  const bands = [[0, 20], [20, 20], [40, 18], [58, 16], [74, 12], [86, 10]];
+  bands.forEach(([y, hh], i) => R(-200, y - (i === 0 ? 200 : 0), 600, hh + (i === 0 ? 200 : 0), mixHex(mixHex(P.top, P.bot, i / 5), '#6d7480', g)));
+  // stars
+  if (P.stars > 0.01 && !rainy) {
+    ctx.globalAlpha = P.stars;
+    [[20,12],[46,30],[71,9],[98,24],[122,6],[139,34],[166,16],[185,41],[8,44],[88,46],[112,40],[58,52],[-20,20],[-40,38],[220,14],[236,30]].forEach(([x, y]) => R(x, y, 1, 1, '#f4e9c1'));
+    ctx.globalAlpha = 1;
+  }
+  // sun or moon (hidden in rain)
+  if (!rainy) {
+    const y = P.sunY;
+    R(150, 50 + y, 8, 2, P.sun); R(148, 52 + y, 12, 6, P.sun); R(150, 58 + y, 8, 2, P.sun);
+  }
+  // clouds drift
+  const drift = (SAVE.gm * 0.4) % 260;
+  const cloudC = rainy ? '#8a909c' : P.cloud;
+  ctx.globalAlpha = rainy ? 1 : 0.92;
+  [[26, 32, 22, 4, 31, 29, 11, 3], [114, 22, 18, 3, 118, 19, 8, 3], [170, 38, 14, 3, 0, 0, 0, 0], [-30, 26, 18, 3, -26, 23, 9, 3]].forEach(c => {
+    const off = ((c[0] + drift + 60) % 320) - 60 - c[0];
+    R(c[0] + off, c[1], c[2], c[3], cloudC); if (c[6]) R(c[4] + off, c[5], c[6], c[7], cloudC);
+  });
+  if (rainy) { R(-200, 0, 600, 14, '#7b818c'); R(-200, 14, 600, 4, '#868c97'); }
+  ctx.globalAlpha = 1;
+  // gulls
+  if (P.gull > 0.5 && !rainy) {
+    const gx = (SAVE.gm * 1.5) % 300 - 50;
+    R(gx, 42, 3, 1, '#3b3b48'); R(gx + 3, 43, 2, 1, '#3b3b48'); R(gx + 5, 42, 3, 1, '#3b3b48');
+  }
+  // land
+  R(-200, 90, 244, 6, P.land); R(8, 86, 24, 4, P.land); R(160, 92, 240, 4, P.land);
+  // sea
+  R(-200, 96, 600, 26, P.sea); R(-200, 122, 600, 36, P.seaDeep); R(-200, 158, 600, 242, P.seaDeeper);
+  if (!rainy) { ctx.globalAlpha = P.glint; R(140, 97, 18, 1, P.sun); R(144, 100, 10, 1, P.sun); ctx.globalAlpha = 1; }
+  const wv = reduceMotion ? 0 : Math.sin(performance.now() / 700) * 1.5;
+  [[58,100,6],[112,104,8],[164,99,5],[20,107,7],[172,110,6],[86,114,5],[40,118,6],[150,117,7],[122,128,5],[-10,103,6],[200,106,7]].forEach(([x, y, w], i) => R(x + (i % 2 ? wv : -wv), y, w, 1, P.wave));
+  // ambient fish shadows in deep water
+  ctx.globalAlpha = P.shadow;
+  const amb = (performance.now() / 1000) * (reduceMotion ? 0 : 3);
+  R(118 + Math.sin(amb / 4) * 6, 140, 14, 4, '#000'); R(70 - Math.sin(amb / 5) * 8, 166, 10, 3, '#000'); R(138 + Math.sin(amb / 6) * 5, 182, 22, 6, '#000');
+  ctx.globalAlpha = 1;
+  // hooked/approaching fish shadow
+  const sh = S.shadow;
+  if (sh && (sh.show || S.state === 'bite' || S.state === 'reeling')) {
+    ctx.globalAlpha = 0.45;
+    const x = (S.state === 'reeling' || S.state === 'bite') ? S.bob.x - sh.w / 2 + Math.sin(S.t * 12) * 1.5 : (sh.cx ?? sh.x);
+    const y = (S.state === 'reeling' || S.state === 'bite') ? 106 : sh.y;
+    R(x, y, sh.w, Math.max(2, sh.w / 3), '#000'); R(x - 2, y + 0.5, 2, Math.max(1, sh.w / 3 - 1), '#000');
+    ctx.globalAlpha = 1;
+  }
+  // pilings
+  [8, 38, 68, 98].forEach(x => { R(x, 93, 3, 34, P.post); ctx.globalAlpha = 0.6; R(x - 2, 98, 7, 1, P.wave); ctx.globalAlpha = 1; });
+  // deck
+  R(-200, 86, 308, 2, P.woodLight); R(-200, 88, 308, 4, P.wood); R(-200, 92, 308, 1, P.woodDark);
+  for (let x = -194; x < 108; x += 16) R(x, 88, 1, 4, P.woodDark);
+  [-26, 4, 34, 76].forEach(x => R(x, 76, 2, 10, P.wood)); R(-26, 76, 104, 1, P.woodLight);
+  // lamp
+  if (P.glow > 0.01) {
+    ctx.globalAlpha = P.glow; ctx.fillStyle = '#ffcf6b';
+    ctx.beginPath(); ctx.arc(84, 60, 16, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(84, 60, 8, 0, 7); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  R(83, 58, 2, 28, P.post); R(80, 54, 8, 3, P.post); R(81, 57, 6, 2, P.glow > 0.05 ? '#ffd97a' : '#cfc7b0');
+  // bucket
+  R(70, 82, 7, 4, '#5f7d8c'); R(69, 81, 9, 1, '#88a4b0');
+  // Saltwhisker
+  drawCat(P);
+
+  // rod tip position
+  let tip = { x: TIP.x, y: TIP.y };
+  if (S.state === 'charging') { tip = { x: lerp(TIP.x, 116, S.power), y: lerp(TIP.y, 52, S.power) }; }
+  if (S.state === 'reeling') { const bend = clamp(S.tension, 0, 1) + (S.surgeLeft > 0 ? 0.25 : 0); tip = { x: TIP.x + bend * 3, y: TIP.y + bend * 9 + (S.surgeLeft > 0 && !reduceMotion ? Math.sin(S.t * 40) : 0) }; }
+  if (S.state === 'bite') tip.y += 2;
+  ctx.strokeStyle = '#6b4a2e'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(HAND.x, HAND.y); ctx.lineTo(tip.x, tip.y); ctx.stroke();
+
+  // bobber + line
+  const inWater = ['flying', 'waiting', 'bite', 'reeling'].includes(S.state);
+  let bx, by;
+  if (inWater) {
+    bx = S.bob.x; by = S.bob.y;
+    if (S.state === 'waiting') {
+      by = 102 + (reduceMotion ? 0 : Math.sin(S.t * 2.2) * 0.4);
+      if (S.t - S.lastNibble < 0.25) by += 1.2;
+    }
+    if (S.state === 'bite') by = 104 + (reduceMotion ? 0 : Math.sin(S.t * 30) * 0.6);
+  } else { bx = tip.x; by = tip.y + 8; }
+  ctx.strokeStyle = S.state === 'reeling' && S.tension > TUNE.sweet[1] + 0.12 ? '#ff8a7a' : P.line;
+  ctx.globalAlpha = 0.85; ctx.lineWidth = 0.4;
+  ctx.beginPath(); ctx.moveTo(tip.x, tip.y);
+  if (S.state === 'reeling' || S.state === 'bite') ctx.lineTo(bx, by);
+  else ctx.quadraticCurveTo((tip.x + bx) / 2, Math.max(tip.y, by) + 4, bx, by);
+  ctx.stroke(); ctx.globalAlpha = 1;
+  if (S.state !== 'reeling') {
+    R(bx - 1.5, by - 2, 3, 2, '#d8433a'); R(bx - 1.5, by, 3, 2, '#f4f1ea');
+  }
+  if (inWater && S.state !== 'flying') {
+    const rp = reduceMotion ? 0 : (S.t * 6) % 4;
+    R(bx - 5 - rp, 104, 11 + rp * 2, 1, P.wave);
+  }
+  if (S.state === 'bite') { R(bx - 0.5, by - 12, 2, 5, '#ffcf6b'); R(bx - 0.5, by - 6, 2, 2, '#ffcf6b'); }
+
+  // splashes
+  for (const p of S.splashes) { ctx.globalAlpha = 1 - p.t / 0.6; R(p.x, p.y, 1, 1, '#f4f1ea'); }
+  ctx.globalAlpha = 1;
+  // rain
+  if (rainy) { ctx.globalAlpha = 0.55; for (const r of S.rain) R(r.x, r.y, 0.6, 3, '#c9d6ea'); ctx.globalAlpha = 1; }
+}
+
+/* ---------- HUD ---------- */
+const $ = id => document.getElementById(id);
+const ui = { msg: '' };
+const ICONS = {
+  day: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c98a1a" stroke-width="2.2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/></svg>',
+  dusk: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c9602e" stroke-width="2.2" aria-hidden="true"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 6v3M4.5 10.5l2 1.5M19.5 10.5l-2 1.5"/></svg>',
+  night: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b4a7a" stroke-width="2.2" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>',
+};
+let lastIcon = '', lastPips = '';
+function fmtTime(h) {
+  const hh = Math.floor(h), mm = Math.floor((h - hh) * 60 / 10) * 10;
+  const ampm = hh < 12 ? 'AM' : 'PM'; const h12 = hh % 12 === 0 ? 12 : hh % 12;
+  return h12 + ':' + String(mm).padStart(2, '0') + ' ' + ampm;
+}
+function updateFound() {
+  const n = Object.keys(SAVE.found).length;
+  $('foundCount').textContent = n + '/' + FISH.length;
+  $('journalBtn').setAttribute('aria-label', 'Open journal, ' + n + ' of ' + FISH.length + ' fish found');
+}
+function updateHud() {
+  const h = hourOf(SAVE.gm), per = periodOf(h);
+  if (per !== lastIcon) { $('clockIcon').innerHTML = ICONS[per]; lastIcon = per; }
+  $('clockText').textContent = 'DAY ' + dayOf(SAVE.gm) + ' · ' + fmtTime(h) + (SAVE.weather === 'rain' ? ' · RAIN' : '');
+
+  const D = SAVE.dinner, open = dinnerOpen(SAVE.gm);
+  const pipKey = D.pts + '|' + D.done + '|' + open;
+  if (pipKey !== lastPips) {
+    lastPips = pipKey;
+    const pips = $('dinnerPips'); pips.innerHTML = '';
+    for (let i = 0; i < TUNE.dinnerGoal; i++) { const e = document.createElement('span'); e.className = 'pip' + (i < D.pts ? ' on' : ''); pips.appendChild(e); }
+    pips.setAttribute('aria-label', D.pts + ' of ' + TUNE.dinnerGoal + ' dinner points');
+  }
+  $('dinnerLabel').textContent = D.done ? 'DINNER SERVED' : open ? 'DINNER' : 'SNACK TIME';
+  $('dinnerPips').hidden = D.done || !open;
+  $('dinnerRight').textContent = D.done ? (SAVE.streak > 1 ? SAVE.streak + ' nights in a row' : '') : open ? 'by 8 PM' : 'dinner at 6 AM';
+  const meterOn = S.state === 'charging' || S.state === 'reeling';
+  $('meterRow').hidden = !meterOn; $('meter').hidden = !meterOn;
+  let msg = '';
+  if (S.state === 'idle') msg = 'Hold anywhere to wind up. Let go to cast.';
+  else if (S.state === 'charging') {
+    $('meterLabel').textContent = 'CAST POWER';
+    $('meterRight').textContent = { near: 'close in', mid: 'medium', far: 'far out' }[depthFromPower(S.power)];
+    $('meterFill').style.width = (S.power * 100) + '%';
+    $('meterFill').style.background = S.power > 0.7 ? '#e0a23a' : '#2f7f7a';
+    $('zoneSweet').hidden = true; $('zoneSnap').hidden = true; $('meterMark').hidden = true;
+    msg = 'Let go to cast.';
+  }
+  else if (S.state === 'flying') msg = '';
+  else if (S.state === 'waiting') msg = 'Wait for the bobber to dip...';
+  else if (S.state === 'bite') msg = 'TAP NOW!';
+  else if (S.state === 'reeling') {
+    $('meterLabel').textContent = 'LINE TENSION';
+    $('meterRight').textContent = Math.max(0, S.dist).toFixed(0) + ' m to go';
+    $('meterFill').style.width = '0';
+    $('zoneSweet').hidden = false; $('zoneSnap').hidden = false; $('meterMark').hidden = false;
+    $('zoneSweet').style.left = (TUNE.sweet[0] * 100) + '%'; $('zoneSweet').style.width = ((TUNE.sweet[1] - TUNE.sweet[0]) * 100) + '%';
+    $('zoneSnap').style.left = '82%'; $('zoneSnap').style.width = '18%';
+    $('meterMark').style.left = (clamp(S.tension, 0, 1) * 100) + '%';
+    msg = S.surgeLeft > 0 ? 'It is pulling! Ease off!' : S.slack > 0.6 ? 'Line is slack! Reel!' : S.tension > 0.82 ? 'Ease off!' : 'Hold to reel. Keep it in the green.';
+  }
+  else if (S.state === 'message') msg = ui.msg;
+  if (S.state === 'caught') msg = '';
+  const m = $('msg');
+  if (m.textContent !== msg) m.textContent = msg;
+  m.style.fontFamily = S.state === 'bite' ? "'Pixelify Sans', sans-serif" : '';
+  m.style.fontSize = S.state === 'bite' ? '26px' : '';
+  $('panel').style.visibility = (S.state === 'caught' || S.state === 'flying') ? 'hidden' : 'visible';
+}
+
+/* ---------- Catch card ---------- */
+function showCatch(f, size, isNew, isRecord, dinnerNote) {
+  $('catchStamp').hidden = !(isNew || isRecord);
+  $('catchStamp').textContent = isNew ? 'NEW ENTRY' : 'NEW BEST';
+  $('catchNo').textContent = 'No. ' + String(f.id).padStart(3, '0');
+  const per = periodOf(hourOf(SAVE.gm));
+  $('catchWhen').textContent = per[0].toUpperCase() + per.slice(1) + ' · ' + (SAVE.weather === 'rain' ? 'Rain' : 'Clear');
+  $('catchSketch').textContent = '[Drawing of ' + f.name + ' coming soon]';
+  $('catchName').textContent = f.name;
+  $('catchFacts').innerHTML = '';
+  [size + ' cm', f.rarity, dinnerNote, f.id === DAILY ? "Today's fish" : null].filter(Boolean).forEach(t => {
+    const s = document.createElement('span'); s.textContent = t; $('catchFacts').appendChild(s);
+  });
+  $('catchNote').textContent = isNew ? f.note : 'Caught ' + SAVE.found[f.id].n + ' times now. Best: ' + SAVE.found[f.id].best + ' cm.';
+  if (dinnerNote === 'Dinner served!') $('catchNote').textContent += ' That makes dinner. ' + (SAVE.streak > 1 ? SAVE.streak + ' nights in a row.' : 'Purring.');
+  $('catchOverlay').hidden = false;
+  S.lastCatch = f.id;
+  setTimeout(() => $('keepFishing').focus(), 50);
+}
+$('keepFishing').addEventListener('click', () => { $('catchOverlay').hidden = true; setState('idle'); });
+$('catchToJournal').addEventListener('click', () => { $('catchOverlay').hidden = true; setState('idle'); openJournal(S.lastCatch); });
+
+/* ---------- Journal ---------- */
+function openJournal(detailId) {
+  S.holding = false;
+  if (['charging'].includes(S.state)) setState('idle');
+  $('journal').hidden = false;
+  renderJournal();
+  if (detailId) showDetail(detailId);
+  $('journalBack').focus();
+}
+function closeJournal() {
+  if (!$('journalDetail').hidden) { $('journalDetail').hidden = true; $('journalGrid').hidden = false; return; }
+  $('journal').hidden = true;
+}
+function renderJournal() {
+  const n = Object.keys(SAVE.found).length;
+  const daily = FISH.find(f => f.id === DAILY);
+  $('journalSub').textContent = n + ' of ' + FISH.length + ' found · today\'s fish: ' + (SAVE.found[daily.id] ? daily.name : daily.hint);
+  const grid = $('journalGrid'); grid.innerHTML = '';
+  $('journalDetail').hidden = true; grid.hidden = false;
+  for (const f of FISH) {
+    const rec = SAVE.found[f.id];
+    const no = 'No. ' + String(f.id).padStart(3, '0');
+    if (rec) {
+      const b = document.createElement('button'); b.className = 'slot';
+      b.innerHTML = '<div class="mini">sketch</div><span class="no"></span><span class="nm"></span>';
+      b.querySelector('.no').textContent = no; b.querySelector('.nm').textContent = f.name;
+      b.addEventListener('click', () => showDetail(f.id));
+      grid.appendChild(b);
+    } else {
+      const d = document.createElement('div'); d.className = 'slot missing';
+      d.innerHTML = '<span class="q" aria-hidden="true">?</span><span class="no"></span><span class="hint"></span>';
+      d.querySelector('.no').textContent = no; d.querySelector('.hint').textContent = f.hint;
+      grid.appendChild(d);
+    }
+  }
+}
+function showDetail(id) {
+  const f = FISH.find(x => x.id === id), rec = SAVE.found[id];
+  if (!rec) return;
+  const el = $('journalDetail'); el.innerHTML = '';
+  const add = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; el.appendChild(e); return e; };
+  add('div', 'small', 'No. ' + String(f.id).padStart(3, '0') + ' · ' + f.rarity).style.color = 'var(--muted)';
+  add('div', 'sketch', '[Drawing of ' + f.name + ' coming soon]');
+  add('h2', 'fishname', f.name);
+  const facts = add('div', 'facts');
+  ['Best ' + rec.best + ' cm', 'Caught ' + rec.n + (rec.n === 1 ? ' time' : ' times'), 'First ' + rec.first].forEach(t => { const s = document.createElement('span'); s.textContent = t; facts.appendChild(s); });
+  add('p', 'note', f.note);
+  $('journalGrid').hidden = true; el.hidden = false;
+}
+$('journalBtn').addEventListener('click', () => openJournal());
+$('journalBack').addEventListener('click', closeJournal);
+window.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('journal').hidden) closeJournal(); });
+
+/* ---------- Debug (?debug) ---------- */
+if (new URLSearchParams(location.search).has('debug')) {
+  const dbg = $('debug'); dbg.hidden = false;
+  const mk = (label, fn) => { const b = document.createElement('button'); b.textContent = label; b.addEventListener('click', fn); dbg.appendChild(b); };
+  const setHour = hh => { SAVE.gm = (dayOf(SAVE.gm) - 1) * 1440 + hh * 60; };
+  mk('6am', () => setHour(6)); mk('noon', () => setHour(12)); mk('6pm', () => setHour(18)); mk('10pm', () => setHour(22));
+  mk('rain', () => { SAVE.weather = SAVE.weather === 'rain' ? 'clear' : 'rain'; });
+  mk('bite now', () => { if (S.state === 'waiting') S.waitAt = S.t; });
+  mk('reset', () => { SAVE = freshSave(); persist(); updateFound(); });
+}
+
+/* ---------- Loop ---------- */
+let last = performance.now(), saveTimer = 0;
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  const paused = !$('journal').hidden;
+  if (!paused) update(dt);
+  draw();
+  updateHud();
+  saveTimer += dt; if (saveTimer > 5) { saveTimer = 0; persist(); }
+  requestAnimationFrame(frame);
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) persist(); });
+updateFound();
+requestAnimationFrame(frame);
+
+/* ---------- Playtest hooks ---------- */
+window.__tb = {
+  S, TUNE, FISH,
+  get save() { return SAVE; },
+  press, release,
+  setHour(hh) { SAVE.gm = (dayOf(SAVE.gm) - 1) * 1440 + hh * 60; },
+  setWeather(w) { SAVE.weather = w; },
+  reset() { SAVE = freshSave(); persist(); updateFound(); },
+  closeCard() { $('catchOverlay').hidden = true; setState('idle'); },
+  catPose, dinnerOpen,
+};
+</script>
+</body>
+</html>

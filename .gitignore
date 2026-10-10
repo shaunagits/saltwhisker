@@ -1,0 +1,7 @@
+# Private working files: notes, source art, licensed models. Never committed,
+# so the repo can go public later without leaking anything.
+_private/
+
+.DS_Store
+node_modules/
+.vercel/

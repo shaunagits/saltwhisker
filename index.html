@@ -604,7 +604,60 @@ function drawCat(P) {
 // Shauna's painted sky. The image is placed in world pixels so its horizon (90% down) sits on the sea at y 96.
 const SKY_DAY = new Image();
 SKY_DAY.src = 'art/sky-day.jpg';
+const SKY_NIGHT = new Image();
+SKY_NIGHT.src = 'art/sky-night.jpg';
 const SKY_RECT = { x: 10, w: 200 };   // world x range the painting spans; height follows its aspect ratio
+// Distant scenery (village left, lighthouse right), cut out and cropped to its content.
+// Its bottom edge is the horizon. Shifted left so the lighthouse shows on phones in portrait.
+const FAR_DAY = new Image();
+FAR_DAY.src = 'art/far-day.webp';
+const FAR_RECT = { x: 40, w: 140, lamp: [1328, 35] };   // lamp = lighthouse light, in image pixels
+const FAR_NIGHT = new Image();
+FAR_NIGHT.src = 'art/far-night.webp';
+// night painting has its own layout: line its lighthouse up with the daytime one so the switch doesn't jump
+const FAR_NIGHT_LAMP = [1156, 33.5];
+let FAR_TINTS = null;   // dusk and night versions, made once the image loads
+FAR_DAY.onload = () => {
+  const mk = (col, amt) => {
+    const c = document.createElement('canvas'); c.width = FAR_DAY.naturalWidth; c.height = FAR_DAY.naturalHeight;
+    const x = c.getContext('2d'); x.drawImage(FAR_DAY, 0, 0);
+    x.globalCompositeOperation = 'source-atop'; x.globalAlpha = amt; x.fillStyle = col; x.fillRect(0, 0, c.width, c.height);
+    return c;
+  };
+  FAR_TINTS = { dusk: mk('#3d3560', 0.72), night: mk('#141b38', 0.86) };
+};
+function farReady() { return FAR_DAY.complete && FAR_DAY.naturalWidth > 0 && FAR_TINTS; }
+function drawFar(P) {
+  const img = FAR_DAY, h = FAR_RECT.w * img.naturalHeight / img.naturalWidth, y = 96 - h;
+  const toDusk = clamp(P.stars / 0.35, 0, 1), toNight = clamp((P.stars - 0.35) / 0.65, 0, 1);
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(img, FAR_RECT.x, y, FAR_RECT.w, h);
+  if (toDusk > 0.01) { ctx.globalAlpha = toDusk; ctx.drawImage(FAR_TINTS.dusk, FAR_RECT.x, y, FAR_RECT.w, h); }
+  const k0 = FAR_RECT.w / img.naturalWidth;
+  const nightReady = FAR_NIGHT.complete && FAR_NIGHT.naturalWidth > 0;
+  let nlx = 0, nly = 0;
+  if (nightReady) {
+    const nh = FAR_NIGHT.naturalHeight * k0, ny = 96 - nh, nx = FAR_RECT.x + (FAR_RECT.lamp[0] - FAR_NIGHT_LAMP[0]) * k0;
+    nlx = nx + FAR_NIGHT_LAMP[0] * k0; nly = ny + FAR_NIGHT_LAMP[1] * k0;
+    if (toNight > 0.01) { ctx.globalAlpha = toNight; ctx.drawImage(FAR_NIGHT, nx, ny, FAR_NIGHT.naturalWidth * k0, nh); }
+  } else if (toNight > 0.01) { ctx.globalAlpha = toNight; ctx.drawImage(FAR_TINTS.night, FAR_RECT.x, y, FAR_RECT.w, h); }
+  ctx.globalAlpha = 1;
+  ctx.imageSmoothingEnabled = false;
+  // lighthouse light switches on at dusk and pulses at night
+  if (P.glow > 0.05) {
+    let lx = FAR_RECT.x + FAR_RECT.lamp[0] * k0, ly = y + FAR_RECT.lamp[1] * k0;
+    if (nightReady) { lx = lerp(lx, nlx, toNight); ly = lerp(ly, nly, toNight); }
+    const pulse = reduceMotion ? 1 : 0.6 + 0.4 * Math.abs(Math.sin(performance.now() / 900));
+    ctx.globalAlpha = clamp(P.glow * 5, 0, 1) * pulse; ctx.fillStyle = '#ffd97a';
+    ctx.beginPath(); ctx.arc(lx, ly, 2.2, 0, 7); ctx.fill();
+    ctx.globalAlpha *= 0.35; ctx.beginPath(); ctx.arc(lx, ly, 6, 0, 7); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+function nightSkyAmount(P) {
+  if (!SKY_NIGHT.complete || !SKY_NIGHT.naturalWidth) return 0;
+  return clamp((P.stars - 0.35) / 0.65, 0, 1);
+}
 function paintedSkyAmount(P) {
   if (!SKY_DAY.complete || !SKY_DAY.naturalWidth) return 0;
   // day = 1, dusk = 0.25 (a hint of clouds under the dusk colors), night = 0, until dusk and night paintings exist
@@ -642,17 +695,16 @@ function draw() {
   const bands = [[0, 20], [20, 20], [40, 18], [58, 16], [74, 12], [86, 10]];
   bands.forEach(([y, hh], i) => R(-200, y - (i === 0 ? 200 : 0), 600, hh + (i === 0 ? 200 : 0), mixHex(mixHex(P.top, P.bot, i / 5), '#6d7480', g)));
   // painted daytime sky on top of the code sky; fades out toward dusk and night
-  const paint = paintedSkyAmount(P);
-  if (paint > 0.01) {
-    ctx.globalAlpha = paint;
-    drawPaintedSky(SKY_DAY);
-    if (rainy) { ctx.globalAlpha = paint * 0.7; R(-300, -300, 800, 400, '#7b818c'); }
-    ctx.globalAlpha = 1;
-  }
-  const codeSky = 1 - paint;
+  const paint = paintedSkyAmount(P), paintN = nightSkyAmount(P);
+  if (paint > 0.01) { ctx.globalAlpha = paint; drawPaintedSky(SKY_DAY); }
+  if (paintN > 0.01) { ctx.globalAlpha = paintN; drawPaintedSky(SKY_NIGHT); }
+  if (rainy && paint + paintN > 0.01) { ctx.globalAlpha = (paint + paintN) * 0.7; R(-300, -300, 800, 400, paintN > paint ? '#2a3046' : '#7b818c'); }
+  ctx.globalAlpha = 1;
+  const painted = SKY_DAY.complete && SKY_DAY.naturalWidth > 0;
+  const codeSky = clamp(1 - paint - paintN, 0, 1);
   // stars
-  if (P.stars > 0.01 && !rainy) {
-    ctx.globalAlpha = P.stars;
+  if (P.stars > 0.01 && !rainy && paintN < 0.99) {
+    ctx.globalAlpha = P.stars * (1 - paintN);
     [[20,12],[46,30],[71,9],[98,24],[122,6],[139,34],[166,16],[185,41],[8,44],[88,46],[112,40],[58,52],[-20,20],[-40,38],[220,14],[236,30]].forEach(([x, y]) => R(x, y, 1, 1, '#f4e9c1'));
     ctx.globalAlpha = 1;
   }
@@ -660,7 +712,12 @@ function draw() {
   if (!rainy && codeSky > 0.01) {
     ctx.globalAlpha = codeSky;
     const y = P.sunY;
-    R(150, 50 + y, 8, 2, P.sun); R(148, 52 + y, 12, 6, P.sun); R(150, 58 + y, 8, 2, P.sun);
+    if (painted) {
+      // soft round sun to match the paintings
+      ctx.fillStyle = P.sun; ctx.imageSmoothingEnabled = true;
+      ctx.globalAlpha = codeSky * 0.25; ctx.beginPath(); ctx.arc(154, 55 + y, 9, 0, 7); ctx.fill();
+      ctx.globalAlpha = codeSky; ctx.beginPath(); ctx.arc(154, 55 + y, 5, 0, 7); ctx.fill();
+    } else { R(150, 50 + y, 8, 2, P.sun); R(148, 52 + y, 12, 6, P.sun); R(150, 58 + y, 8, 2, P.sun); }
     ctx.globalAlpha = 1;
   }
   // clouds drift
@@ -679,7 +736,8 @@ function draw() {
     R(gx, 42, 3, 1, '#3b3b48'); R(gx + 3, 43, 2, 1, '#3b3b48'); R(gx + 5, 42, 3, 1, '#3b3b48');
   }
   // land
-  R(-200, 90, 244, 6, P.land); R(8, 86, 24, 4, P.land); R(160, 92, 240, 4, P.land);
+  if (farReady()) drawFar(P);
+  else { R(-200, 90, 244, 6, P.land); R(8, 86, 24, 4, P.land); R(160, 92, 240, 4, P.land); }
   // sea
   R(-200, 96, 600, 26, P.sea); R(-200, 122, 600, 36, P.seaDeep); R(-200, 158, 600, 242, P.seaDeeper);
   if (!rainy) { ctx.globalAlpha = P.glint; R(140, 97, 18, 1, P.sun); R(144, 100, 10, 1, P.sun); ctx.globalAlpha = 1; }

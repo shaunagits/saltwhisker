@@ -41,6 +41,11 @@ Add `?debug` to the URL for a small panel to jump the clock, toggle rain, force 
 
 ## Art
 
-**Painted backdrops** live in `art/`. `sky-day.jpg` is Shauna's painted daytime sky. It is placed so its horizon (90% of the way down the image) sits on the sea, fades out toward dusk and night, and gets a gray wash in rain. Dusk and night paintings, plus distant scenery layers, can be added the same way (see `drawPaintedSky` in `index.html`).
+**Painted backdrops** live in `art/`, all by Shauna:
+
+- `sky-day.jpg` and `sky-night.jpg`: full skies. Each is placed so its horizon (90% of the way down) sits on the sea. Day fades to the code's dusk colors, then the night painting fades in. Rain adds a gray wash.
+- `far-day.webp` and `far-night.webp`: the distant village and lighthouse, cut out from a magenta background, cropped to their content, with soft faded side edges. The night painting has a slightly different layout, so it is lined up on the lighthouse (`FAR_NIGHT_LAMP`). Dusk uses a tinted copy of the day layer. The lighthouse light pulses in code at dusk and night.
+
+To add a dusk painting later, follow the same pattern in `drawPaintedSky` and `drawFar`.
 
 The fish and Saltwhisker drawings will be hand-drawn by Shauna and dropped in later. Specs live on the design board: 1200 by 900 px transparent PNG per fish, named like `fish-007-grumble-grouper.png`.

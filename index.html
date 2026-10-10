@@ -599,6 +599,31 @@ function drawCat(P) {
   for (const [x, y, w, c] of px) R(CAT.x + x, CAT.y + y, w, 1, CAT_COL[c]);
 }
 
+
+/* ---------- Painted backdrops ---------- */
+// Shauna's painted sky. The image is placed in world pixels so its horizon (90% down) sits on the sea at y 96.
+const SKY_DAY = new Image();
+SKY_DAY.src = 'art/sky-day.jpg';
+const SKY_RECT = { x: 10, w: 200 };   // world x range the painting spans; height follows its aspect ratio
+function paintedSkyAmount(P) {
+  if (!SKY_DAY.complete || !SKY_DAY.naturalWidth) return 0;
+  // day = 1, dusk = 0.25 (a hint of clouds under the dusk colors), night = 0, until dusk and night paintings exist
+  const toDusk = clamp(P.stars / 0.35, 0, 1), toNight = clamp((P.stars - 0.35) / 0.65, 0, 1);
+  return clamp(1 - (0.75 * toDusk + 0.25 * toNight), 0, 1);
+}
+function drawPaintedSky(img) {
+  const h = SKY_RECT.w * img.naturalHeight / img.naturalWidth;
+  const y = 96 - h * 0.9;
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(img, SKY_RECT.x, y, SKY_RECT.w, h);
+  // stretch the outer columns for very wide screens
+  ctx.drawImage(img, 0, 0, 2, img.naturalHeight, SKY_RECT.x - 300, y, 300.5, h);
+  ctx.drawImage(img, img.naturalWidth - 2, 0, 2, img.naturalHeight, SKY_RECT.x + SKY_RECT.w - 0.5, y, 300, h);
+  // above the painting, continue its top color
+  ctx.drawImage(img, 0, 0, img.naturalWidth, 2, SKY_RECT.x - 300, y - 300, SKY_RECT.w + 600, 300.5);
+  ctx.imageSmoothingEnabled = false;
+}
+
 /* ---------- Draw ---------- */
 function R(x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); }
 function draw() {
@@ -616,6 +641,15 @@ function draw() {
   const g = rainy ? 0.35 : 0;
   const bands = [[0, 20], [20, 20], [40, 18], [58, 16], [74, 12], [86, 10]];
   bands.forEach(([y, hh], i) => R(-200, y - (i === 0 ? 200 : 0), 600, hh + (i === 0 ? 200 : 0), mixHex(mixHex(P.top, P.bot, i / 5), '#6d7480', g)));
+  // painted daytime sky on top of the code sky; fades out toward dusk and night
+  const paint = paintedSkyAmount(P);
+  if (paint > 0.01) {
+    ctx.globalAlpha = paint;
+    drawPaintedSky(SKY_DAY);
+    if (rainy) { ctx.globalAlpha = paint * 0.7; R(-300, -300, 800, 400, '#7b818c'); }
+    ctx.globalAlpha = 1;
+  }
+  const codeSky = 1 - paint;
   // stars
   if (P.stars > 0.01 && !rainy) {
     ctx.globalAlpha = P.stars;
@@ -623,14 +657,16 @@ function draw() {
     ctx.globalAlpha = 1;
   }
   // sun or moon (hidden in rain)
-  if (!rainy) {
+  if (!rainy && codeSky > 0.01) {
+    ctx.globalAlpha = codeSky;
     const y = P.sunY;
     R(150, 50 + y, 8, 2, P.sun); R(148, 52 + y, 12, 6, P.sun); R(150, 58 + y, 8, 2, P.sun);
+    ctx.globalAlpha = 1;
   }
   // clouds drift
   const drift = (SAVE.gm * 0.4) % 260;
   const cloudC = rainy ? '#8a909c' : P.cloud;
-  ctx.globalAlpha = rainy ? 1 : 0.92;
+  ctx.globalAlpha = rainy ? 1 : 0.92 * codeSky;
   [[26, 32, 22, 4, 31, 29, 11, 3], [114, 22, 18, 3, 118, 19, 8, 3], [170, 38, 14, 3, 0, 0, 0, 0], [-30, 26, 18, 3, -26, 23, 9, 3]].forEach(c => {
     const off = ((c[0] + drift + 60) % 320) - 60 - c[0];
     R(c[0] + off, c[1], c[2], c[3], cloudC); if (c[6]) R(c[4] + off, c[5], c[6], c[7], cloudC);

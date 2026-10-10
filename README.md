@@ -41,4 +41,6 @@ Add `?debug` to the URL for a small panel to jump the clock, toggle rain, force 
 
 ## Art
 
+**Painted backdrops** live in `art/`. `sky-day.jpg` is Shauna's painted daytime sky. It is placed so its horizon (90% of the way down the image) sits on the sea, fades out toward dusk and night, and gets a gray wash in rain. Dusk and night paintings, plus distant scenery layers, can be added the same way (see `drawPaintedSky` in `index.html`).
+
 The fish and Saltwhisker drawings will be hand-drawn by Shauna and dropped in later. Specs live on the design board: 1200 by 900 px transparent PNG per fish, named like `fish-007-grumble-grouper.png`.

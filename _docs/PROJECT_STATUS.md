@@ -21,6 +21,7 @@ Design board (private Claude artifact, "Saltwhisker Design Board"): palette for 
 | Camera zoomed in (focus box 72 world pixels) | First version showed the whole 200 pixel world and the cat was too small. Scale snaps to whole device pixels to avoid seams. |
 | Dinner: 4 points by 8 PM, 1 to 3 points per fish by size | A light daily goal. Missing dinner only resets the streak. Some fish are refused for comedy. |
 | Strong fish surge and tire over time | Without surges a careful player never snapped the line. Without tiring, legendaries dragged on for 40 seconds or more. |
+| Painted sky behind the pixel world (2026-10-10) | Puts Shauna's art in phase 1 without her drawing the cat. Water, pier and cat stay pixel because they animate. Day sky first; dusk and night are code colors until those paintings exist. |
 | Repo private during development, public later | Portfolio value. Private material lives in `_private/` and is never committed. |
 
 ## Playtest numbers (bot, 2026-10-10)

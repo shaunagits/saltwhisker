@@ -9,12 +9,13 @@ Play it at https://games.shauna.digital/saltwhisker/
 1. **Cast.** Hold anywhere (or Space) to wind up. The power bar fills and falls back, so timing matters. Let go to cast. A short cast fishes close in, a long one fishes far out, and some fish only live at one depth.
 2. **Wait.** A fish shadow swims toward the bobber. Saltwhisker's ears twitch on a nibble. Tapping on a nibble scares the fish off.
 3. **Bite.** The bobber dips, his ears go up and his tail puffs. Tap within the bite window.
-4. **Reel.** Hold to reel, let go to ease off. Keep the tension marker in the green. Too much tension snaps the line, too much slack lets the fish go. Strong fish surge (the rod jerks and the panel says "It is pulling!"), and every fish tires as the fight goes on.
-5. **Catch.** A journal card shows the fish. New fish get a "NEW ENTRY" stamp, bigger ones get "NEW BEST".
+4. **Reel.** Hold to reel, let go to ease off. Keep the tension marker in the green. Too much tension snaps the line, too much slack lets the fish go. Every fish fights in its own way (`fight` in `FISH`, notes in `FIGHTS`): steady bursts, quick darts, a sardine that sulks and goes limp, groupers that grumble then lunge, a tuna that runs, an eel that wriggles, heavy ones, and a ghost that fades out mid-fight. Every fish tires as the fight goes on.
+5. **Golden fish.** About 1 in 20 bites is a golden version, given away by a gold shimmer in the water. Golden catches get a star in the journal.
+6. **Catch.** A journal card shows the fish. New fish get a "NEW ENTRY" stamp, bigger ones get "NEW BEST".
 
 **Dinner.** Each game day, Saltwhisker needs 4 dinner points before 8 PM. Bigger fish are worth more (1 to 3 points). Some fish he refuses to eat (the crab, anything wearing a hat, the legendaries). Fish caught after 8 PM are snacks. Make dinner every evening to build a streak.
 
-**Time and weather.** One game day lasts 12 real minutes. Day, dusk and night each have their own fish. Some days it rains, which brings out rain-only fish. One "fish of the day" is the same for everyone on a calendar date and is more likely to bite. One fish only appears on real-world Sundays.
+**Time and weather.** The clock follows your real local time, and Day 1 is the day you first played. Day, dusk and night each have their own fish. Some days it rains, which brings out rain-only fish. One "fish of the day" is the same for everyone on a calendar date and is more likely to bite. One fish only appears on real-world Sundays.
 
 ## Code layout
 

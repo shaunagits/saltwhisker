@@ -9,7 +9,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%231d3b52'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%23f3ead8'/%3E%3Crect x='7' y='3' width='2' height='10' fill='%232b2a33'/%3E%3Crect x='4' y='6' width='2' height='1' fill='%23b5453a'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Ysabeau+Infant:wght@500;600;700;800&family=Kalam:wght@400;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Shantell+Sans:wght@400..800&family=Kalam:wght@400;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root {
   --paper: #f3ead8; --shade: #e6d8bc; --ink: #2b2a33; --stamp: #b5453a;
@@ -18,7 +18,7 @@
 }
 html, body { margin: 0; height: 100%; background: #0b1030; overflow: hidden; overscroll-behavior: none; }
 body {
-  font-family: 'Ysabeau Infant', system-ui, sans-serif; color: var(--ink);
+  font-family: 'Shantell Sans', system-ui, sans-serif; color: var(--ink);
   -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: none;
   -webkit-tap-highlight-color: transparent;
 }
@@ -89,13 +89,19 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 }
 .stamp {
   position: absolute; top: 10px; right: 14px; padding: 4px 10px; border: 3px solid var(--stamp); color: var(--stamp);
-  background: var(--paper); border-radius: 6px; font-family: 'Ysabeau Infant', sans-serif; font-size: 16px; font-weight: 800; letter-spacing: 1.5px; transform: rotate(6deg);
+  background: var(--paper); border-radius: 6px; font-family: 'Shantell Sans', sans-serif; font-size: 16px; font-weight: 800; letter-spacing: 1.5px; transform: rotate(6deg);
 }
 .sketch {
   height: 180px; border: 2px dashed var(--stamp); border-radius: 12px; display: flex; align-items: center; justify-content: center;
   text-align: center; padding: 10px; box-sizing: border-box; font-family: 'Kalam', cursive; font-size: 18px; color: var(--stamp);
 }
 .sketch.art { border: none; padding: 0; }
+.sketch.gold:not(.art) { border-color: #c99a2e; color: #a87a12; }
+.small-sketch { height: 140px; }
+.goldstamp { border-color: #c99a2e !important; color: #a87a12 !important; }
+.fightnote { font-family: 'Kalam', cursive; font-size: 17px; color: var(--deep); }
+.slot { position: relative; }
+.goldmark { position: absolute; top: 6px; right: 8px; color: #d9a521; font-size: 16px; text-shadow: 0 1px 0 #8a6510; }
 .sketch.art img, .slot .mini img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
 .fishname { margin: 0; font-family: 'Kalam', cursive; font-weight: 700; font-size: 30px; line-height: 1.1; color: var(--deep); }
 .facts { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 15px; font-weight: 700; }
@@ -112,7 +118,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   padding: max(16px, env(safe-area-inset-top)) 16px 32px; box-sizing: border-box; font-family: 'Courier Prime', monospace;
 }
 .jhead { display: flex; align-items: center; gap: 14px; max-width: 640px; margin: 0 auto; }
-.jhead h1 { margin: 0; font-size: 26px; letter-spacing: 0.5px; color: var(--deep); font-family: 'Ysabeau Infant', sans-serif; font-weight: 700; }
+.jhead h1 { margin: 0; font-size: 26px; letter-spacing: 0.5px; color: var(--deep); font-family: 'Shantell Sans', sans-serif; font-weight: 700; }
 .sq { width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: transparent; border: 1.5px solid rgba(43, 42, 51, 0.45); border-radius: 50%; padding: 0; }
 .grid { max-width: 640px; margin: 18px auto 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
 .slot {
@@ -122,7 +128,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .slot .mini.art { border: none; }
 .slot .mini { flex-grow: 1; min-height: 40px; border: 1.5px dashed #c98d84; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'Kalam', cursive; font-size: 13px; color: var(--stamp); }
 .slot.missing { background: var(--shade); border-style: dashed; border-color: #b9a787; box-shadow: none; align-items: center; justify-content: center; text-align: center; cursor: default; }
-.slot .q { font-family: 'Ysabeau Infant', sans-serif; font-size: 30px; font-weight: 700; color: #a8956f; }
+.slot .q { font-family: 'Shantell Sans', sans-serif; font-size: 30px; font-weight: 700; color: #a8956f; }
 .slot .no { font-size: 11px; color: var(--muted); }
 .slot .nm { font-family: 'Kalam', cursive; font-size: 15px; font-weight: 700; line-height: 1.05; }
 .slot .hint { font-family: 'Kalam', cursive; font-size: 14px; color: #5a4a3a; }
@@ -201,8 +207,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 
 /* ---------- Tuning knobs ---------- */
 const TUNE = {
-  minutesPerSecond: 2,     // game clock speed: 2 means one game day every 12 real minutes
-  startHour: 14,           // where a brand new save starts
+  // The clock follows the player's real local time. Day 1 is the day they first played.
   chargeTime: 1.1,         // seconds for the power bar to go from empty to full (then it falls back)
   flightTime: 0.7,         // seconds the bobber is in the air
   waitMin: 2.5,            // seconds before a bite, at least
@@ -230,22 +235,23 @@ const TUNE = {
 
 /* ---------- Fish ---------- */
 // time: any | day | dusk | night   depth: any | near | mid | far   weather: any | rain
+// fight: how it pulls on the line, see FIGHTS below
 const FISH = [
-  { id: 1,  name: 'Pier Perch',          time: 'any',   depth: 'any',  w: 10,  size: [12, 25],  str: 0.2,  rarity: 'Common',    note: 'Tastes like pier. Would eat again.', hint: 'anytime' },
-  { id: 2,  name: 'Sulky Sardine',       time: 'day',   depth: 'near', w: 8,   size: [8, 15],   str: 0.15, rarity: 'Common',    note: 'Sighed when caught. Small, but dinner is dinner.', hint: 'daytime, close in' },
-  { id: 3,  name: 'Drizzle Darter',      time: 'any',   depth: 'any',  w: 6,   size: [14, 22],  str: 0.3,  rarity: 'Uncommon',  note: 'Only comes up in the rain. I hate the rain. Worth it.', hint: 'rainy days', weather: 'rain' },
-  { id: 4,  name: 'Bucket Crab',         time: 'any',   depth: 'near', w: 7,   size: [10, 18],  str: 0.25, rarity: 'Common',    note: 'Not a fish. Pinched my nose. Not eating it.', hint: 'close to the pier', refuse: true },
-  { id: 5,  name: 'Gull Snack',          time: 'day',   depth: 'mid',  w: 6,   size: [15, 22],  str: 0.2,  rarity: 'Common',    note: 'The gulls wanted this one. Too bad, gulls.', hint: 'daytime' },
-  { id: 6,  name: 'Dusky Flounder',      time: 'dusk',  depth: 'any',  w: 5,   size: [30, 45],  str: 0.4,  rarity: 'Uncommon',  note: 'Flat. Judgy. Delicious.', hint: 'dusk only' },
-  { id: 7,  name: 'Grumble Grouper',     time: 'any',   depth: 'mid',  w: 4,   size: [35, 55],  str: 0.55, rarity: 'Uncommon',  note: 'Grumbled the whole way up. So did I.', hint: 'a medium cast' },
-  { id: 8,  name: 'Lamplight Grouper',   time: 'night', depth: 'near', w: 3,   size: [40, 60],  str: 0.5,  rarity: 'Rare',      note: 'Only bites when the lamp is on. Looked personally offended to be caught.', hint: 'night, under the lamp' },
-  { id: 9,  name: 'Longline Tuna',       time: 'any',   depth: 'far',  w: 3,   size: [60, 90],  str: 0.75, rarity: 'Rare',      note: 'Needed all four paws. Dinner for a week.', hint: 'cast far' },
-  { id: 10, name: 'Sock Eel',            time: 'night', depth: 'mid',  w: 4,   size: [30, 70],  str: 0.45, rarity: 'Uncommon',  note: 'Looks like a lost sock. Tastes slightly better.', hint: 'night' },
-  { id: 11, name: 'Lanternfish',         time: 'night', depth: 'far',  w: 2,   size: [20, 30],  str: 0.5,  rarity: 'Rare',      note: 'Brought its own light. Too pretty to eat.', hint: 'night, far out', refuse: true },
-  { id: 12, name: 'Tiny Admiral',        time: 'day',   depth: 'any',  w: 2,   size: [5, 8],    str: 0.1,  rarity: 'Rare',      note: 'Wears a hat. Respect. Let it go.', hint: 'daytime, if lucky', refuse: true },
-  { id: 13, name: 'Sunday Snapper',      time: 'any',   depth: 'any',  w: 4,   size: [25, 40],  str: 0.4,  rarity: 'Rare',      note: 'Only shows up on Sundays. Dressed for it. So was I.', hint: 'Sundays', sunday: true },
-  { id: 14, name: 'Old Boot Bass',       time: 'dusk',  depth: 'far',  w: 0.6, size: [70, 100], str: 0.9,  rarity: 'Legendary', note: 'Might be a boot. Did not eat.', hint: 'legendary', refuse: true },
-  { id: 15, name: 'The Pier Ghost',      time: 'night', depth: 'far',  w: 0.4, size: [80, 120], str: 0.95, rarity: 'Legendary', note: 'Nobody believes me. Not eating a ghost.', hint: 'legendary', weather: 'rain', refuse: true },
+  { id: 1,  name: 'Pier Perch',          time: 'any',   depth: 'any',  w: 10,  size: [12, 25],  str: 0.2,  rarity: 'Common', fight: 'steady',    note: 'Tastes like pier. Would eat again.', hint: 'anytime' },
+  { id: 2,  name: 'Sulky Sardine',       time: 'day',   depth: 'near', w: 8,   size: [8, 15],   str: 0.15, rarity: 'Common', fight: 'sulk',    note: 'Sighed when caught. Small, but dinner is dinner.', hint: 'daytime, close in' },
+  { id: 3,  name: 'Drizzle Darter',      time: 'any',   depth: 'any',  w: 6,   size: [14, 22],  str: 0.3,  rarity: 'Uncommon', fight: 'dart',  note: 'Only comes up in the rain. I hate the rain. Worth it.', hint: 'rainy days', weather: 'rain' },
+  { id: 4,  name: 'Bucket Crab',         time: 'any',   depth: 'near', w: 7,   size: [10, 18],  str: 0.25, rarity: 'Common', fight: 'dart',    note: 'Not a fish. Pinched my nose. Not eating it.', hint: 'close to the pier', refuse: true },
+  { id: 5,  name: 'Gull Snack',          time: 'day',   depth: 'mid',  w: 6,   size: [15, 22],  str: 0.2,  rarity: 'Common', fight: 'steady',    note: 'The gulls wanted this one. Too bad, gulls.', hint: 'daytime' },
+  { id: 6,  name: 'Dusky Flounder',      time: 'dusk',  depth: 'any',  w: 5,   size: [30, 45],  str: 0.4,  rarity: 'Uncommon', fight: 'heavy',  note: 'Flat. Judgy. Delicious.', hint: 'dusk only' },
+  { id: 7,  name: 'Grumble Grouper',     time: 'any',   depth: 'mid',  w: 4,   size: [35, 55],  str: 0.55, rarity: 'Uncommon', fight: 'grumble',  note: 'Grumbled the whole way up. So did I.', hint: 'a medium cast' },
+  { id: 8,  name: 'Lamplight Grouper',   time: 'night', depth: 'near', w: 3,   size: [40, 60],  str: 0.5,  rarity: 'Rare', fight: 'grumble',      note: 'Only bites when the lamp is on. Looked personally offended to be caught.', hint: 'night, under the lamp' },
+  { id: 9,  name: 'Longline Tuna',       time: 'any',   depth: 'far',  w: 3,   size: [60, 90],  str: 0.75, rarity: 'Rare', fight: 'run',      note: 'Needed all four paws. Dinner for a week.', hint: 'cast far' },
+  { id: 10, name: 'Sock Eel',            time: 'night', depth: 'mid',  w: 4,   size: [30, 70],  str: 0.45, rarity: 'Uncommon', fight: 'wriggle',  note: 'Looks like a lost sock. Tastes slightly better.', hint: 'night' },
+  { id: 11, name: 'Lanternfish',         time: 'night', depth: 'far',  w: 2,   size: [20, 30],  str: 0.5,  rarity: 'Rare', fight: 'dart',      note: 'Brought its own light. Too pretty to eat.', hint: 'night, far out', refuse: true },
+  { id: 12, name: 'Tiny Admiral',        time: 'day',   depth: 'any',  w: 2,   size: [5, 8],    str: 0.1,  rarity: 'Rare', fight: 'steady',      note: 'Wears a hat. Respect. Let it go.', hint: 'daytime, if lucky', refuse: true },
+  { id: 13, name: 'Sunday Snapper',      time: 'any',   depth: 'any',  w: 4,   size: [25, 40],  str: 0.4,  rarity: 'Rare', fight: 'steady',      note: 'Only shows up on Sundays. Dressed for it. So was I.', hint: 'Sundays', sunday: true },
+  { id: 14, name: 'Old Boot Bass',       time: 'dusk',  depth: 'far',  w: 0.6, size: [70, 100], str: 0.9,  rarity: 'Legendary', fight: 'heavy', note: 'Might be a boot. Did not eat.', hint: 'legendary', refuse: true },
+  { id: 15, name: 'The Pier Ghost',      time: 'night', depth: 'far',  w: 0.4, size: [80, 120], str: 0.95, rarity: 'Legendary', fight: 'ghost', note: 'Nobody believes me. Not eating a ghost.', hint: 'legendary', weather: 'rain', refuse: true },
 ];
 
 // Shauna's fish paintings (art/fish/). Fish without one yet show the dashed placeholder.
@@ -256,19 +262,40 @@ function fishArtEl(f) {
   im.src = 'art/fish/' + FISH_ART[f.id] + '.webp'; im.alt = 'Painting of the ' + f.name; im.decoding = 'async';
   return im;
 }
-function fillSketch(el, f, text) {
+function fillSketch(el, f, text, gold) {
   el.innerHTML = ''; const im = fishArtEl(f);
   el.classList.toggle('art', !!im);
-  if (im) el.appendChild(im); else el.textContent = text;
+  el.classList.toggle('gold', !!gold);
+  if (im) { if (gold) { im.style.filter = GOLD.filter; im.alt = 'Painting of a golden ' + f.name; } el.appendChild(im); }
+  else el.textContent = gold ? '[Golden ' + f.name + ': drawing coming soon]' : text;
 }
+
+// Each fish fights in its own way. Notes show in the journal once the fish is caught.
+const FIGHTS = {
+  steady:  'Pulls in bursts.',
+  dart:    'Quick little tugs, over and over.',
+  sulk:    'Gives up halfway and goes limp. Reel fast.',
+  grumble: 'Stops to grumble, then lunges.',
+  run:     'Makes long runs. Let it go, then reel.',
+  wriggle: 'Wriggles side to side. The tension swings.',
+  heavy:   'No tricks. Just heavy.',
+  ghost:   'Fades away mid-fight, then comes back.',
+};
+// Rare golden versions of every fish: a gold shimmer in the water gives them away.
+const GOLD = { chance: 0.05, filter: 'sepia(1) saturate(3.2) hue-rotate(-14deg) brightness(1.08) contrast(1.05)' };
 
 /* ---------- Save ---------- */
 const SAVE_KEY = 'saltwhisker.save';
-function freshSave() { return { v: 1, gm: TUNE.startHour * 60, weather: 'clear', dayRolled: 1, found: {}, dinner: { key: 1, pts: 0, done: false, judged: false }, streak: 0, best: 0 }; }
+function freshSave() { return { v: 1, start: todayISO(), gm: 0, weather: 'clear', dayRolled: 1, found: {}, dinner: { key: 1, pts: 0, done: false, judged: false }, streak: 0, best: 0 }; }
 function loadSave() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
-    if (s && s.v === 1 && s.found) { if (!s.dinner) { s.dinner = { key: 0, pts: 0, done: false, judged: false }; s.streak = 0; s.best = 0; } return s; }
+    if (s && s.v === 1 && s.found) {
+      if (!s.dinner) { s.dinner = { key: 0, pts: 0, done: false, judged: false }; s.streak = 0; s.best = 0; }
+      // saves from the old fast clock: keep their day count going from today
+      if (!s.start) s.start = isoAddDays(todayISO(), -(Math.floor(s.gm / 1440)));
+      return s;
+    }
   } catch (e) {}
   return freshSave();
 }
@@ -285,6 +312,12 @@ function mixHex(a, b, t) {
   const pa = hexToRgb(a), pb = hexToRgb(b);
   return '#' + pa.map((v, i) => Math.round(v + (pb[i] - v) * t).toString(16).padStart(2, '0')).join('');
 }
+function isoAddDays(iso, n) { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function daysSince(iso) { return Math.round((new Date(todayISO() + 'T12:00:00') - new Date(iso + 'T12:00:00')) / 864e5); }
+const CLOCK = { offset: 0 };   // minutes added to real time; only the debug panel and playtest hooks change it
+function clockGm() { const d = new Date(); return daysSince(SAVE.start) * 1440 + d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60 + CLOCK.offset; }
+function setClockHour(hh) { const now = clockGm(); CLOCK.offset += (Math.floor(now / 1440) * 1440 + hh * 60) - now; }
+SAVE.gm = clockGm();
 function todayISO() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 function dailyFishId() {
   // Same fish for everyone on the same calendar day. Legendaries never.
@@ -430,6 +463,7 @@ function startWaiting() {
   }
   S.lastNibble = -9;
   S.fish = pickFish();
+  S.gold = Math.random() < GOLD.chance;
   const fromLeft = Math.random() < 0.5;
   const sz = clamp(S.fish.size[1] / 10, 4, 14);
   S.shadow = { x: S.bob.x + (fromLeft ? -40 : 40), y: rand(112, 124), w: sz, show: false };
@@ -442,6 +476,58 @@ function hook() {
   S.tension = 0.35; S.slack = 0;
   S.surgeIn = rand(TUNE.surgeEvery[0], TUNE.surgeEvery[1]); S.surgeLeft = 0;
   S.reelFrom = S.bob.x;
+  S.fight = { t: 0, at: rand(0.4, 0.6) }; S.fightMsg = ''; S.ghostOut = false;
+}
+// One step of the fish's fight. Returns how it changes the pull this frame.
+function surgeCycle(o, dt, str, every, len, pow) {
+  S.surgeIn -= dt;
+  if (S.surgeIn <= 0) { S.surgeLeft = len; S.surgeIn = rand(every[0], every[1]); }
+  if (S.surgeLeft > 0) { S.surgeLeft -= dt; o.surge = TUNE.surgePower * str * pow; }
+}
+function fightStep(dt, str) {
+  const F = S.fight, style = S.fish.fight || 'steady';
+  const o = { surge: 0, pull: 1, reel: 1, up: 1, extra: 0, ghost: false, msg: '' };
+  F.t += dt;
+  const progress = 1 - S.dist / S.startDist;
+  const phase = (name, lo, hi) => { F.phase = name; F.until = F.t + rand(lo, hi); };
+  const normal = [TUNE.surgeEvery, TUNE.surgeLength, 1];
+  switch (style) {
+    case 'dart': surgeCycle(o, dt, str, [0.45, 1], 0.22, 1.25); break;
+    case 'run':
+      surgeCycle(o, dt, str, [2.8, 4.4], 1.2, 0.85);
+      if (S.surgeLeft > 0) { o.pull = 2.4; o.msg = 'It is running! Ease off, let it go.'; }
+      break;
+    case 'heavy':
+      o.reel = 0.72; o.up = 1.3; o.pull = 1.25;
+      if (F.t < 2.5) o.msg = 'Heavy one. Keep it steady.';
+      break;
+    case 'wriggle':
+      o.extra = Math.sin(F.t * 6.5) * 0.85 * (0.4 + str);
+      surgeCycle(o, dt, str, [3, 5], 0.35, 0.8);
+      if (F.t < 2.5) o.msg = 'It is wriggling! Ride the swings.';
+      break;
+    case 'sulk':
+      if (!F.sulked && progress > F.at) { F.sulked = true; F.until = F.t + 1.8; }
+      if (F.sulked && F.t < F.until) { o.up = 0.25; o.extra = -0.8; o.reel = 1.6; o.pull = 0; o.msg = 'It is sulking. Reel fast before it slips off!'; }
+      else surgeCycle(o, dt, str, ...normal);
+      break;
+    case 'grumble':
+      if (!F.phase) phase('pull', 1.5, 2.6);
+      if (F.t > F.until) { if (F.phase === 'pull') phase('grumble', 1.2, 2); else if (F.phase === 'grumble') phase('lunge', 0.6, 0.8); else phase('pull', 1.8, 3); }
+      if (F.phase === 'pull') surgeCycle(o, dt, str, [1.6, 3], TUNE.surgeLength, 0.8);
+      if (F.phase === 'grumble') { o.pull = 0.15; o.up = 0.8; S.surgeLeft = 0; o.msg = 'It is grumbling...'; }
+      if (F.phase === 'lunge') { o.surge = TUNE.surgePower * str * 1.9; o.pull = 2.4; S.surgeLeft = 0.1; o.msg = 'Lunge! Ease off!'; }
+      break;
+    case 'ghost':
+      if (!F.phase) phase('here', 2, 3.2);
+      if (F.t > F.until) { if (F.phase === 'here') phase('gone', 1.2, 1.7); else phase('here', 2.2, 3.4); }
+      if (F.phase === 'here') surgeCycle(o, dt, str, ...normal);
+      else { o.ghost = true; o.reel = 0; o.up = 0; o.pull = 0; o.extra = -0.6; S.surgeLeft = 0; o.msg = 'It vanished... wait for it.'; }
+      break;
+    default: surgeCycle(o, dt, str, ...normal);
+  }
+  S.fightMsg = o.msg; S.ghostOut = o.ghost;
+  return o;
 }
 function landFish() {
   const f = S.fish;
@@ -449,8 +535,11 @@ function landFish() {
   const rec = SAVE.found[f.id];
   const isNew = !rec;
   const isRecord = !isNew && size > rec.best;
+  const gold = !!S.gold;
   if (isNew) SAVE.found[f.id] = { n: 1, best: size, first: todayISO() };
   else { rec.n++; if (isRecord) rec.best = size; }
+  const r2 = SAVE.found[f.id], newGold = gold && !r2.gold;
+  if (gold) r2.gold = (r2.gold || 0) + 1;
   let dinnerNote = '';
   const D = SAVE.dinner;
   if (f.refuse) dinnerNote = 'Won\'t eat it';
@@ -464,7 +553,7 @@ function landFish() {
   }
   persist();
   S.catches++;
-  showCatch(f, size, isNew, isRecord, dinnerNote);
+  showCatch(f, size, isNew, isRecord, dinnerNote, gold, newGold);
   setState('caught');
   S.shadow = null;
   updateFound();
@@ -481,12 +570,18 @@ function dinnerOpen(gm) { const h = hourOf(gm); return h >= TUNE.dinnerStart && 
 function dinnerPoints(size) { return clamp(Math.round(size / 20), 1, 3); }
 function tickDinner() {
   const k = dinnerKey(SAVE.gm), D = SAVE.dinner;
-  if (D.key !== k) { SAVE.dinner = { key: k, pts: 0, done: false, judged: false }; return; }
+  if (D.key !== k) {
+    // a missed dinner on a day the player was away still ends the streak
+    if (!D.done && D.key && k - D.key >= 1 && !D.judged) SAVE.streak = 0;
+    SAVE.dinner = { key: k, pts: 0, done: false, judged: false }; return;
+  }
+  if (dinnerOpen(SAVE.gm)) S.sawDinner = true;
   if (!D.judged && !dinnerOpen(SAVE.gm) && hourOf(SAVE.gm) >= TUNE.dinnerHour) {
     D.judged = true;
     if (!D.done) {
       SAVE.streak = 0;
-      if (S.state === 'idle' || S.state === 'message') say('8 PM and no dinner. Saltwhisker sulks. Night fish are snacks only.', 3);
+      // only grumble if the player was here while dinner was still possible
+      if (S.sawDinner && (S.state === 'idle' || S.state === 'message')) say('8 PM and no dinner. Saltwhisker sulks. Night fish are snacks only.', 3);
     }
     persist();
   }
@@ -497,10 +592,9 @@ let rainTimer = 0;
 function update(dt) {
   S.t += dt;
   // clock
-  const prevDay = dayOf(SAVE.gm);
-  SAVE.gm += dt * TUNE.minutesPerSecond;
+  SAVE.gm = clockGm();
   const d = dayOf(SAVE.gm);
-  if (d !== prevDay && SAVE.dayRolled !== d) {
+  if (SAVE.dayRolled !== d) {   // a new real day since the last roll, including days away
     SAVE.dayRolled = d;
     SAVE.weather = Math.random() < TUNE.rainChance ? 'rain' : 'clear';
   }
@@ -538,20 +632,18 @@ function update(dt) {
       const f = S.fish;
       const str = f.str * (1 - 0.5 * Math.min(1, S.t / TUNE.tireTime));   // fish tire as the fight goes on
       const sweet = S.tension >= TUNE.sweet[0] && S.tension <= TUNE.sweet[1];
-      // surges
-      S.surgeIn -= dt;
-      if (S.surgeIn <= 0) { S.surgeLeft = TUNE.surgeLength; S.surgeIn = rand(TUNE.surgeEvery[0], TUNE.surgeEvery[1]); }
-      let surge = 0;
-      if (S.surgeLeft > 0) { S.surgeLeft -= dt; surge = TUNE.surgePower * str; }
+      const o = fightStep(dt, str);
+      const surge = o.surge;
       if (S.holding) {
-        S.tension += (TUNE.tensionUp * (0.6 + str) + surge) * dt;
-        S.dist -= TUNE.reelSpeed * (sweet ? TUNE.sweetBonus : 1) * (1 - str * TUNE.strengthDrag) * dt;
+        S.tension += (TUNE.tensionUp * (0.6 + str) * o.up + surge + o.extra) * dt;
+        S.dist -= TUNE.reelSpeed * (sweet ? TUNE.sweetBonus : 1) * (1 - str * TUNE.strengthDrag) * o.reel * dt;
       } else {
-        S.tension += (surge * 0.6 - TUNE.tensionDown) * dt;
-        S.dist += TUNE.pullOut * str * dt;
+        S.tension += (surge * 0.6 - TUNE.tensionDown + o.extra) * dt;
+        S.dist += TUNE.pullOut * str * o.pull * dt;
       }
+      if (o.pull > 1 && S.holding) S.dist += TUNE.pullOut * str * (o.pull - 1) * 0.5 * dt;   // a running fish takes line even while you reel
       S.tension = clamp(S.tension, 0, 1.2);
-      if (S.tension < 0.08) S.slack += dt; else S.slack = 0;
+      if (S.tension < 0.08 && !o.ghost) S.slack += dt; else S.slack = 0;
       const k = clamp(1 - S.dist / S.startDist, 0, 1);
       S.bob.x = lerp(S.reelFrom, 113, k);
       S.bob.y = 102 + Math.sin(S.t * 18) * (reduceMotion ? 0.2 : 0.6);
@@ -946,7 +1038,7 @@ function draw() {
     ctx.globalAlpha = 1;
   }
   // clouds drift
-  const drift = (SAVE.gm * 0.4) % 260;
+  const drift = (performance.now() / 1000 * 0.8) % 260;
   const cloudC = rainy ? '#8a909c' : P.cloud;
   ctx.globalAlpha = rainy ? 1 : 0.92 * codeSky;
   ctx.fillStyle = cloudC;
@@ -959,7 +1051,7 @@ function draw() {
   ctx.globalAlpha = 1;
   // gulls
   if (P.gull > 0.5 && !rainy) {
-    const gx = (SAVE.gm * 1.5) % 300 - 50;
+    const gx = (performance.now() / 1000 * 3) % 300 - 50;
     const flap = reduceMotion ? 0 : Math.sin(performance.now() / 160) * 0.6;
     ctx.strokeStyle = '#4a4a58'; ctx.lineWidth = 0.45; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(gx, 42 - flap); ctx.quadraticCurveTo(gx + 2, 41.2, gx + 3.5, 43); ctx.quadraticCurveTo(gx + 5, 41.2, gx + 7, 42 - flap); ctx.stroke();
@@ -998,7 +1090,9 @@ function draw() {
     const x = (S.state === 'reeling' || S.state === 'bite') ? S.bob.x - sh.w / 2 + Math.sin(S.t * 12) * 1.5 : (sh.cx ?? sh.x);
     const y = (S.state === 'reeling' || S.state === 'bite') ? 106 : sh.y;
     const hh = Math.max(2, sh.w / 3);
-    ctx.fillStyle = '#000';
+    if (S.ghostOut) ctx.globalAlpha = 0.12;
+    ctx.fillStyle = S.gold ? '#f2c14e' : '#000';
+    if (S.gold) ctx.globalAlpha = 0.55 + (reduceMotion ? 0 : 0.25 * Math.sin(performance.now() / 160));
     ctx.beginPath(); ctx.ellipse(x + sh.w / 2, y + hh / 2, sh.w / 2, hh / 2, 0, 0, 7);
     ctx.moveTo(x + 0.5, y + hh / 2); ctx.lineTo(x - 2.5, y); ctx.lineTo(x - 2.5, y + hh); ctx.fill();
     ctx.globalAlpha = 1;
@@ -1141,32 +1235,33 @@ function updateHud() {
     $('zoneSweet').style.left = (TUNE.sweet[0] * 100) + '%'; $('zoneSweet').style.width = ((TUNE.sweet[1] - TUNE.sweet[0]) * 100) + '%';
     $('zoneSnap').style.left = '82%'; $('zoneSnap').style.width = '18%';
     $('meterMark').style.left = (clamp(S.tension, 0, 1) * 100) + '%';
-    msg = S.surgeLeft > 0 ? 'It is pulling! Ease off!' : S.slack > 0.6 ? 'Line is slack! Reel!' : S.tension > 0.82 ? 'Ease off!' : 'Hold to reel. Keep it in the green.';
+    msg = S.slack > 0.6 ? 'Line is slack! Reel!' : S.fightMsg ? S.fightMsg : S.surgeLeft > 0 ? 'It is pulling! Ease off!' : S.tension > 0.82 ? 'Ease off!' : 'Hold to reel. Keep it in the green.';
   }
   else if (S.state === 'message') msg = ui.msg;
   if (S.state === 'caught') msg = '';
   const m = $('msg');
   if (m.textContent !== msg) m.textContent = msg;
-  m.style.fontFamily = S.state === 'bite' ? "'Ysabeau Infant', sans-serif" : '';
+  m.style.fontFamily = S.state === 'bite' ? "'Shantell Sans', sans-serif" : '';
   m.style.fontWeight = S.state === 'bite' ? '800' : '';
   m.style.fontSize = S.state === 'bite' ? '26px' : '';
   $('panel').style.visibility = (S.state === 'caught' || S.state === 'flying') ? 'hidden' : 'visible';
 }
 
 /* ---------- Catch card ---------- */
-function showCatch(f, size, isNew, isRecord, dinnerNote) {
-  $('catchStamp').hidden = !(isNew || isRecord);
-  $('catchStamp').textContent = isNew ? 'NEW ENTRY' : 'NEW BEST';
+function showCatch(f, size, isNew, isRecord, dinnerNote, gold, newGold) {
+  $('catchStamp').hidden = !(isNew || isRecord || newGold);
+  $('catchStamp').textContent = newGold ? 'GOLDEN!' : isNew ? 'NEW ENTRY' : 'NEW BEST';
+  $('catchStamp').classList.toggle('goldstamp', !!newGold);
   $('catchNo').textContent = 'No. ' + String(f.id).padStart(3, '0');
   const per = periodOf(hourOf(SAVE.gm));
   $('catchWhen').textContent = per[0].toUpperCase() + per.slice(1) + ' · ' + (SAVE.weather === 'rain' ? 'Rain' : 'Clear');
-  fillSketch($('catchSketch'), f, '[Drawing of ' + f.name + ' coming soon]');
-  $('catchName').textContent = f.name;
+  fillSketch($('catchSketch'), f, '[Drawing of ' + f.name + ' coming soon]', gold);
+  $('catchName').textContent = (gold ? 'Golden ' : '') + f.name;
   $('catchFacts').innerHTML = '';
   [size + ' cm', f.rarity, dinnerNote, f.id === DAILY ? "Today's fish" : null].filter(Boolean).forEach(t => {
     const s = document.createElement('span'); s.textContent = t; $('catchFacts').appendChild(s);
   });
-  $('catchNote').textContent = isNew ? f.note : 'Caught ' + SAVE.found[f.id].n + ' times now. Best: ' + SAVE.found[f.id].best + ' cm.';
+  $('catchNote').textContent = newGold && !isNew ? 'A golden one. Too shiny to eat? No. Still dinner.' : isNew ? f.note : 'Caught ' + SAVE.found[f.id].n + ' times now. Best: ' + SAVE.found[f.id].best + ' cm.';
   if (dinnerNote === 'Dinner served!') $('catchNote').textContent += ' That makes dinner. ' + (SAVE.streak > 1 ? SAVE.streak + ' nights in a row.' : 'Purring.');
   $('catchOverlay').hidden = false;
   S.lastCatch = f.id;
@@ -1202,6 +1297,7 @@ function renderJournal() {
       b.innerHTML = '<div class="mini">sketch</div><span class="no"></span><span class="nm"></span>';
       b.querySelector('.no').textContent = no; b.querySelector('.nm').textContent = f.name;
       fillSketch(b.querySelector('.mini'), f, 'sketch');
+      if (rec.gold) { const g = document.createElement('span'); g.className = 'goldmark'; g.textContent = '★'; g.title = 'Golden one caught'; b.appendChild(g); }
       b.addEventListener('click', () => showDetail(f.id));
       grid.appendChild(b);
     } else {
@@ -1223,6 +1319,12 @@ function showDetail(id) {
   const facts = add('div', 'facts');
   ['Best ' + rec.best + ' cm', 'Caught ' + rec.n + (rec.n === 1 ? ' time' : ' times'), 'First ' + rec.first].forEach(t => { const s = document.createElement('span'); s.textContent = t; facts.appendChild(s); });
   add('p', 'note', f.note);
+  add('div', 'fightnote', 'How it fights: ' + FIGHTS[f.fight || 'steady']);
+  if (rec.gold) {
+    add('div', 'small', 'Golden one · caught ' + rec.gold + (rec.gold === 1 ? ' time' : ' times')).style.color = '#a87a12';
+    const g = add('div', 'sketch small-sketch');
+    fillSketch(g, f, '', true);
+  } else add('div', 'small', 'Golden one: not yet. Watch for a gold shimmer in the water.').style.color = 'var(--muted)';
   $('journalGrid').hidden = true; el.hidden = false;
 }
 $('journalBtn').addEventListener('click', () => openJournal());
@@ -1233,7 +1335,7 @@ window.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('journal'
 if (new URLSearchParams(location.search).has('debug')) {
   const dbg = $('debug'); dbg.hidden = false;
   const mk = (label, fn) => { const b = document.createElement('button'); b.textContent = label; b.addEventListener('click', fn); dbg.appendChild(b); };
-  const setHour = hh => { SAVE.gm = (dayOf(SAVE.gm) - 1) * 1440 + hh * 60; };
+  const setHour = hh => { setClockHour(hh); SAVE.gm = clockGm(); };
   mk('6am', () => setHour(6)); mk('noon', () => setHour(12)); mk('6pm', () => setHour(18)); mk('10pm', () => setHour(22));
   mk('rain', () => { SAVE.weather = SAVE.weather === 'rain' ? 'clear' : 'rain'; });
   mk('bite now', () => { if (S.state === 'waiting') S.waitAt = S.t; });
@@ -1260,7 +1362,7 @@ window.__tb = {
   S, TUNE, FISH,
   get save() { return SAVE; },
   press, release,
-  setHour(hh) { SAVE.gm = (dayOf(SAVE.gm) - 1) * 1440 + hh * 60; },
+  setHour(hh) { setClockHour(hh); SAVE.gm = clockGm(); },
   setWeather(w) { SAVE.weather = w; },
   reset() { SAVE = freshSave(); persist(); updateFound(); },
   closeCard() { $('catchOverlay').hidden = true; setState('idle'); },

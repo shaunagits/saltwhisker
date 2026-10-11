@@ -52,7 +52,7 @@ To process a new coast image: `python3 tools/key-magenta.py input.png art/far-na
 
 - `pier.webp`: one strip made of two repeats of the middle section plus the end section. Below the waterline it fades into the water.
 - `lamp.webp` and `bucket.webp`: props on the deck. The lantern glows in code at dusk and night.
-- `cat-body.webp`, `cat-ear-back.webp`, `cat-ear-front.webp`, `cat-tail.webp`: Saltwhisker as a puppet. Ears and tail turn around their roots for the nibble and bite cues, the body squashes when he crouches, and he blinks. A soft rim light outlines him at night.
+- `cat-body.webp`, `cat-head.webp`, `cat-ear-back.webp`, `cat-ear-front.webp`, `cat-tail-1..3.webp`: Saltwhisker as a puppet. The head tilts on the neck (looks about, glances at the water, watches the bobber, perks up on a bite, leans in to reel). Ears turn on the head for the nibble and bite cues. The tail bends at two joints in a travelling wave with an occasional flick, stands up and puffs on a bite, lashes while reeling. The body squashes when he crouches, and he blinks. A soft rim light outlines him at night.
 
 To rebuild them from new images: key each one with `python3 tools/key-magenta.py --sprite`, then run `python3 tools/build-painted-art.py work art`. The cut shapes for the ears and tail are at the top of that script. Placement constants (`PIER`, `LAMP`, `BUCKET`, `CATP`) are in `index.html`. Water, the rod, line, bobber and fish shadows are drawn in code in soft shapes to match.
 

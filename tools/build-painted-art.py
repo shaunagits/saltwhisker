@@ -9,9 +9,10 @@ Step 1, key each original (originals live in _private/, never committed):
 Step 2:
   python3 tools/build-painted-art.py work art
 
-The cat is split into four layers of the same size so they stack without offsets:
-body, back ear, front ear and tail. Ears and tail are drawn behind the body, so their
-roots hide under the hat and the rump when they rotate. The cut shapes below are in the
+The cat is split into same-size layers so they stack without offsets: body, head (with
+hat), back ear, front ear and three tail pieces. Ears turn on the head, the head tilts on
+the neck, and the tail bends at two joints. Tail pieces sit behind the body, ears behind
+the hat, so every root stays hidden when a piece rotates. The cut shapes below are in the
 keyed cat image's pixels; if the cat art changes, redraw them (a grid overlay helps).
 
 The pier is one long strip: two repeats of the middle section, then the end section,
@@ -55,11 +56,21 @@ EAR_BACK = [(505, 0), (640, 0), (640, 140), (600, 192), (505, 197)]
 EAR_FRONT = [(645, 0), (740, 0), (740, 92), (650, 108)]
 TAIL = [(0, 380), (335, 380), (335, 860), (300, 905), (300, 950), (350, 955), (352, 1127), (0, 1127)]
 TAIL_ROOT = [(330, 940), (440, 940), (440, 1115), (330, 1115)]   # copied, not removed: fills behind the body
+# Head with hat (ears ride on it). Cut just above the collar; a strip of neck fur stays in
+# the body too, so the head can tilt a few degrees without a gap opening under the chin.
+HEAD = [(370, 0), (870, 0), (870, 330), (830, 362), (800, 398), (740, 418), (650, 424), (560, 430), (470, 440), (380, 446)]
+NECK_BAND = [(560, 360), (835, 330), (835, 440), (560, 445)]
+# Tail split in three along its length so it can bend: base, middle, tip. Each piece overlaps
+# the one below by 20 px so the joins stay hidden while they turn.
+TAIL_CUTS = (810, 620)                       # rows where base/middle and middle/tip meet
 
 ear_b = poly_mask(cat.shape, EAR_BACK) * not_yellow
 ear_f = poly_mask(cat.shape, EAR_FRONT) * not_yellow * (1 - poly_mask(cat.shape, EAR_BACK))
-tail = poly_mask(cat.shape, TAIL) * not_yellow
-root = poly_mask(cat.shape, TAIL_ROOT) * not_yellow
+tail = np.clip(poly_mask(cat.shape, TAIL) * not_yellow + poly_mask(cat.shape, TAIL_ROOT) * not_yellow, 0, 1)
+tail_only = poly_mask(cat.shape, TAIL) * not_yellow
+head = np.clip(poly_mask(cat.shape, HEAD) - ear_b - ear_f, 0, 1)
+neck = poly_mask(cat.shape, NECK_BAND) * not_yellow * head
+rows = np.arange(cat.shape[0])[:, None] * np.ones((1, cat.shape[1]))
 
 
 def layer(mask):
@@ -68,17 +79,21 @@ def layer(mask):
     return out
 
 
-body = layer(np.clip(1 - ear_b - ear_f - tail, 0, 1))
+body = layer(np.clip(1 - ear_b - ear_f - tail_only - head + neck, 0, 1))
 sizes = {}
 sizes['body'] = save(body, f'{dst}/cat-body.webp', CAT_H)
+save(layer(head), f'{dst}/cat-head.webp', CAT_H)
 save(layer(ear_b), f'{dst}/cat-ear-back.webp', CAT_H)
 save(layer(ear_f), f'{dst}/cat-ear-front.webp', CAT_H)
-save(layer(np.clip(tail + root, 0, 1)), f'{dst}/cat-tail.webp', CAT_H)
+c1, c2 = TAIL_CUTS
+save(layer(tail * (rows >= c1)), f'{dst}/cat-tail-1.webp', CAT_H)
+save(layer(tail * (rows >= c2) * (rows < c1 + 20)), f'{dst}/cat-tail-2.webp', CAT_H)
+save(layer(tail * (rows < c2 + 20)), f'{dst}/cat-tail-3.webp', CAT_H)
 k = CAT_H / cat.shape[0]
+P = lambda x, y: (round(x * k), round(y * k))
 print('cat layers', sizes['body'], '| scale from keyed image', round(k, 4))
-print('  pivots in layer px: ear back', (round(585 * k), round(182 * k)), 'ear front', (round(690 * k), round(100 * k)),
-      'tail', (round(345 * k), round(1010 * k)), 'eye', (round(735 * k), round(265 * k)), 'paw', (round(1050 * k), round(578 * k)),
-      'feet', round(1120 * k))
+print('  pivots in layer px: ear back', P(585, 182), 'ear front', P(690, 100), 'head', P(650, 425),
+      'tail base', P(345, 1010), 'tail joints', P(205, 810), P(225, 620), 'eye', P(735, 265), 'paw', P(1050, 578), 'feet', round(1120 * k))
 
 # ---------- pier strip ----------
 end = load('pier-end.png')

@@ -106,6 +106,9 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   text-align: center; padding: 10px; box-sizing: border-box; font-family: 'Kalam', cursive; font-size: 18px; color: var(--stamp);
 }
 .sketch.art { border: none; padding: 0; }
+.ghostly { opacity: 0.8; filter: drop-shadow(0 0 8px rgba(170, 205, 255, 0.9)); animation: ghostfloat 4.5s ease-in-out infinite; }
+@keyframes ghostfloat { 0%, 100% { transform: translateY(0); opacity: 0.82; } 50% { transform: translateY(-5px); opacity: 0.6; } }
+@media (prefers-reduced-motion: reduce) { .ghostly { animation: none; } }
 .sketch.gold:not(.art) { border-color: #c99a2e; color: #a87a12; }
 .small-sketch { height: 140px; }
 .goldstamp { border-color: #c99a2e !important; color: #a87a12 !important; }
@@ -277,18 +280,19 @@ const FISH = [
 // Shauna's fish paintings (art/fish/). Fish without one yet show the dashed placeholder.
 const FISH_ART = { 1: 'fish-001-pier-perch', 2: 'fish-002-sulky-sardine', 3: 'fish-003-drizzle-darter', 4: 'fish-004-bucket-crab', 5: 'fish-005-gull-snack', 6: 'fish-006-dusky-flounder',
   8: 'fish-008-lamplight-grouper', 9: 'fish-009-longline-tuna', 10: 'fish-010-sock-eel', 11: 'fish-011-lanternfish', 12: 'fish-012-tiny-admiral',
-  14: 'fish-014-old-boot-bass' };
+  14: 'fish-014-old-boot-bass', 15: 'fish-015-the-pier-ghost' };
 function fishArtEl(f) {
   if (!FISH_ART[f.id]) return null;
   const im = document.createElement('img');
   im.src = 'art/fish/' + FISH_ART[f.id] + '.webp'; im.alt = 'Painting of the ' + f.name; im.decoding = 'async';
+  if (f.fight === 'ghost') im.className = 'ghostly';   // the painting is opaque; the see-through glow is added here
   return im;
 }
 function fillSketch(el, f, text, gold) {
   el.innerHTML = ''; const im = fishArtEl(f);
   el.classList.toggle('art', !!im);
   el.classList.toggle('gold', !!gold);
-  if (im) { if (gold) { im.style.filter = GOLD.filter; im.alt = 'Painting of a golden ' + f.name; } el.appendChild(im); }
+  if (im) { if (gold) { im.style.filter = GOLD.filter + (im.className === 'ghostly' ? ' drop-shadow(0 0 8px rgba(255, 214, 120, 0.85))' : ''); im.alt = 'Painting of a golden ' + f.name; } el.appendChild(im); }
   else el.textContent = gold ? '[Golden ' + f.name + ': drawing coming soon]' : text;
 }
 

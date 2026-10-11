@@ -1,19 +1,20 @@
 # Saltwhisker
 
-A painted fishing game for the browser. Saltwhisker, a tuxedo cat in a yellow sou'wester, fishes off the end of an ocean pier for his dinner and keeps a journal (the Tidebook) of everything he catches.
+A painted fishing game for the browser. Walter, a tuxedo cat in a yellow sou'wester, fishes off the end of an ocean pier for his dinner and keeps a journal (the Tidebook) of everything he catches.
 
 Play it at https://games.shauna.digital/saltwhisker/
 
 ## How a session works
 
 1. **Cast.** Hold anywhere (or Space) to wind up. The power bar fills and falls back, so timing matters. Let go to cast. A short cast fishes close in, a long one fishes far out, and some fish only live at one depth.
-2. **Wait.** A fish shadow swims toward the bobber. Saltwhisker's ears twitch on a nibble. Tapping on a nibble scares the fish off.
+2. **Wait.** A fish shadow swims toward the bobber. Walter's ears twitch on a nibble. Tapping on a nibble scares the fish off.
 3. **Bite.** The bobber dips, his ears go up and his tail puffs. Tap within the bite window.
-4. **Reel.** Hold to reel, let go to ease off. Keep the tension marker in the green. Too much tension snaps the line, too much slack lets the fish go. Every fish fights in its own way (`fight` in `FISH`, notes in `FIGHTS`): steady bursts, quick darts, a sardine that sulks and goes limp, groupers that grumble then lunge, a tuna that runs, an eel that wriggles, heavy ones, and a ghost that fades out mid-fight. Every fish tires as the fight goes on.
+4. **Reel.** Hold to reel, let go to ease off. Keep the tension marker in the green. The green is narrower for rarer fish, drifts for the eel and fades while the ghost is gone. Too much tension snaps the line, too much slack lets the fish go. Every fish fights in its own way (`fight` in `FISH`, notes in `FIGHTS`): steady bursts, quick darts, a sardine that sulks and goes limp, groupers that grumble then lunge, a tuna that runs, an eel that wriggles, heavy ones, and a ghost that fades out mid-fight. Every fish tires as the fight goes on.
 5. **Golden fish.** About 1 in 20 bites is a golden version, given away by a gold shimmer in the water. Golden catches get a star in the journal.
-6. **Catch.** A journal card shows the fish. New fish get a "NEW ENTRY" stamp, bigger ones get "NEW BEST".
+6. **Odds and ends.** Not everything is a fish: a message in a bottle (its note tips you off about a fish you have not caught), four torn map pieces (all four reveal a sunken chest far out, whose lucky coin doubles golden fish), a rubber duck, an empty sardine tin and a single flip-flop. They sit in the journal after the fish with an Odds and Ends tag and are counted separately.
+7. **Catch.** A journal card shows the fish. New fish get a "NEW ENTRY" stamp, bigger ones get "NEW BEST".
 
-**Dinner.** Each game day, Saltwhisker needs 4 dinner points before 8 PM. Bigger fish are worth more (1 to 3 points). Some fish he refuses to eat (the crab, anything wearing a hat, the legendaries). Fish caught after 8 PM are snacks. Make dinner every evening to build a streak.
+**Dinner.** Each day, Walter needs 4 dinner points before 8 PM. Bigger fish are worth more (1 to 3 points). Some fish he refuses to eat (the crab, anything wearing a hat, the legendaries). Fish caught after 8 PM are snacks. Make dinner every evening to build a streak.
 
 **Time and weather.** The clock follows your real local time, and Day 1 is the day you first played. Day, dusk and night each have their own fish. Some days it rains, which brings out rain-only fish. One "fish of the day" is the same for everyone on a calendar date and is more likely to bite. One fish only appears on real-world Sundays.
 
@@ -27,7 +28,7 @@ Sections inside the script, in order:
 - `FISH`: the 15 fish. Each has time of day, depth, weight (how often it bites), size range, strength, rarity, the cat's journal note, the hint shown before it's found, and optional `weather`, `sunday` or `refuse`.
 - Save: local storage key `saltwhisker.save` (clock, weather, journal, dinner, streak).
 - Camera: `CAM` is the focus box (cat, rod, bobber, near water). The game zooms so that box always fits and fills the rest of the screen with more world. Portrait shows more water, landscape shows more sea and sky.
-- Saltwhisker sprite: `CAT_MAP` is the 16 by 16 sprite as text, one letter per color. `catPose()` and `catPixels()` add the ear, tail and crouch cues. At night a soft rim light keeps his outline readable.
+- Walter's pixel stand-in (shown only while the paintings load): `CAT_MAP` is the 16 by 16 sprite as text, one letter per color. `catPose()` and `catPixels()` add the ear, tail and crouch cues. At night a soft rim light keeps his outline readable.
 - Draw, HUD, catch card, journal, debug panel, loop, playtest hooks.
 
 ## Testing
@@ -53,7 +54,7 @@ To process a new coast image: `python3 tools/key-magenta.py input.png art/far-na
 
 - `pier.webp`: one strip made of two repeats of the middle section plus the end section. Below the waterline it fades into the water.
 - `lamp.webp` and `bucket.webp`: props on the deck. The lantern glows in code at dusk and night.
-- `cat-body.webp`, `cat-head.webp`, `cat-ear-back.webp`, `cat-ear-front.webp`, `cat-tail-1..3.webp`: Saltwhisker as a puppet. The head tilts on the neck (looks about, glances at the water, watches the bobber, perks up on a bite, leans in to reel). Ears turn on the head for the nibble and bite cues. The tail bends at two joints in a travelling wave with an occasional flick, stands up and puffs on a bite, lashes while reeling. The body squashes when he crouches, and he blinks. A soft rim light outlines him at night.
+- `cat-body.webp`, `cat-head.webp`, `cat-ear-back.webp`, `cat-ear-front.webp`, `cat-tail-1..3.webp`: Walter as a puppet. The head tilts on the neck (looks about, glances at the water, watches the bobber, perks up on a bite, leans in to reel). Ears turn on the head for the nibble and bite cues. The tail bends at two joints in a travelling wave with an occasional flick, stands up and puffs on a bite, lashes while reeling. The body squashes when he crouches, and he blinks. A soft rim light outlines him at night.
 
 To rebuild them from new images: key each one with `python3 tools/key-magenta.py --sprite`, then run `python3 tools/build-painted-art.py work art`. The cut shapes for the ears and tail are at the top of that script. Placement constants (`PIER`, `LAMP`, `BUCKET`, `CATP`) are in `index.html`. Water, the rod, line, bobber and fish shadows are drawn in code in soft shapes to match.
 

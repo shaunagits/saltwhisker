@@ -1,6 +1,6 @@
 # Saltwhisker
 
-A pixel-art browser fishing game. Saltwhisker, a tuxedo cat in a yellow sou'wester with ear holes, fishes off an ocean pier for his dinner and keeps a journal (the Tidebook) of every catch. Just for fun, for Shauna and her friends. Read `README.md` for how a session works and where the tuning knobs are, `_docs/PROJECT_STATUS.md` for decisions, their reasons and Shauna's open questions, `_docs/TODO.md` for the ordered queue, and `_docs/findings/` before touching the painted backdrops.
+A pixel-art browser fishing game. Saltwhisker, a tuxedo cat in a yellow sou'wester with ear holes, fishes off an ocean pier for his dinner and keeps a journal (the Tidebook) of every catch. Just for fun, for Shauna and her friends. Read `README.md` for how a session works and where the tuning knobs are, `_private/PROJECT_STATUS.md` for decisions, their reasons and Shauna's open questions (local only, never committed), `_docs/TODO.md` for the ordered queue, and `_docs/findings/` before touching the painted backdrops.
 
 - Everything is in `index.html` (canvas plus plain JavaScript, no build step).
 - Repository `shaunagits/saltwhisker` (private during development, public later for her portfolio). Every push to `main` deploys to production on Vercel.

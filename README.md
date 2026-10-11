@@ -56,4 +56,6 @@ To process a new coast image: `python3 tools/key-magenta.py input.png art/far-na
 
 To rebuild them from new images: key each one with `python3 tools/key-magenta.py --sprite`, then run `python3 tools/build-painted-art.py work art`. The cut shapes for the ears and tail are at the top of that script. Placement constants (`PIER`, `LAMP`, `BUCKET`, `CATP`) are in `index.html`. Water, the rod, line, bobber and fish shadows are drawn in code in soft shapes to match.
 
+**Fish paintings** live in `art/fish/` as `fish-001-pier-perch.webp` and so on (keyed with `key-magenta.py --sprite`, then resized to 720 px wide). Add each new one to `FISH_ART` in `index.html`; fish without a painting show the dashed placeholder.
+
 The fish and Saltwhisker drawings will be hand-drawn by Shauna and dropped in later. Specs live on the design board: 1200 by 900 px transparent PNG per fish, named like `fish-007-grumble-grouper.png`.

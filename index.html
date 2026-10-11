@@ -9,15 +9,16 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%231d3b52'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%23f3ead8'/%3E%3Crect x='7' y='3' width='2' height='10' fill='%232b2a33'/%3E%3Crect x='4' y='6' width='2' height='1' fill='%23b5453a'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=Kalam:wght@400;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400..800,0..100&family=Kalam:wght@400;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root {
   --paper: #f3ead8; --shade: #e6d8bc; --ink: #2b2a33; --stamp: #b5453a;
   --tide: #2f7f7a; --deep: #1d3b52; --gold: #ffcf6b; --muted: #6b5c49;
+  --edge: rgba(43, 42, 51, 0.22); --lift: 0 6px 18px rgba(16, 22, 40, 0.22);
 }
 html, body { margin: 0; height: 100%; background: #0b1030; overflow: hidden; overscroll-behavior: none; }
 body {
-  font-family: 'Pixelify Sans', system-ui, sans-serif; color: var(--ink);
+  font-family: 'Fraunces', Georgia, serif; font-variation-settings: 'SOFT' 100; color: var(--ink);
   -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: none;
   -webkit-tap-highlight-color: transparent;
 }
@@ -32,36 +33,38 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 }
 .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .chip {
-  height: 44px; padding: 0 14px; display: flex; align-items: center; gap: 10px;
-  background: var(--paper); border: 3px solid var(--ink); box-sizing: border-box;
-  font-size: 17px; font-weight: 600; white-space: nowrap;
+  height: 44px; padding: 0 16px; display: flex; align-items: center; gap: 10px;
+  background: rgba(250, 244, 230, 0.94); border: 1.5px solid var(--edge); border-radius: 999px; box-sizing: border-box;
+  box-shadow: var(--lift); font-size: 16px; font-weight: 600; white-space: nowrap;
 }
+.chip .small { font-family: inherit; font-style: italic; font-weight: 500; font-size: 15px; color: var(--muted); }
 .chip svg { flex-shrink: 0; }
 .topleft { display: flex; gap: 8px; align-items: center; min-width: 0; }
 .home { width: 44px; padding: 0; justify-content: center; color: var(--ink); text-decoration: none; pointer-events: auto; }
 .home:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .topwrap { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
 .topwrap .top { align-self: stretch; }
-.dinner { height: 40px; font-size: 16px; gap: 8px; }
+.dinner { height: 40px; font-size: 15px; gap: 8px; }
 .pips { display: flex; gap: 4px; }
-.pip { width: 12px; height: 12px; box-sizing: border-box; border: 2px solid #b9a787; background: var(--shade); }
-.pip.on { background: #e0703a; border-color: var(--ink); }
+.pip { width: 12px; height: 12px; box-sizing: border-box; border: 1.5px solid #b9a787; border-radius: 50%; background: var(--shade); }
+.pip.on { background: #e0703a; border-color: #a9502a; }
 .panel {
   align-self: center; width: min(100%, 360px); box-sizing: border-box; padding: 14px 16px;
-  background: rgba(243, 234, 216, 0.94); border: 3px solid var(--ink); box-shadow: 0 5px 0 var(--ink);
+  background: rgba(250, 244, 230, 0.94); border: 1.5px solid var(--edge); border-radius: 18px; box-shadow: var(--lift);
   display: flex; flex-direction: column; gap: 10px;
 }
 @media (orientation: landscape) and (max-height: 520px) {
   .panel { align-self: flex-end; width: 300px; }
 }
 .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-.label { font-size: 18px; font-weight: 700; letter-spacing: 1px; }
+.label { font-size: 17px; font-weight: 700; letter-spacing: 0.5px; }
+.panel .small { font-family: inherit; font-style: italic; font-weight: 500; font-size: 15px; color: var(--muted); }
 .small { font-family: 'Courier Prime', monospace; font-size: 14px; font-weight: 700; }
 .msg { margin: 0; font-family: 'Kalam', cursive; font-size: 19px; line-height: 1.3; text-align: center; color: #3d3a40; }
-.meter { position: relative; height: 22px; border: 3px solid var(--ink); background: var(--shade); box-sizing: border-box; overflow: visible; }
-.meter .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--tide); }
-.meter .zone { position: absolute; top: 0; bottom: 0; }
-.meter .mark { position: absolute; top: -8px; width: 6px; height: 32px; margin-left: -3px; background: var(--ink); }
+.meter { position: relative; height: 18px; border: 1.5px solid rgba(43, 42, 51, 0.4); border-radius: 999px; background: var(--shade); box-sizing: border-box; overflow: visible; }
+.meter .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--tide); border-radius: 999px; }
+.meter .zone { position: absolute; top: 0; bottom: 0; border-radius: 999px; }
+.meter .mark { position: absolute; top: -7px; width: 6px; height: 29px; margin-left: -3px; background: var(--ink); border-radius: 3px; box-shadow: 0 0 0 2px rgba(250, 244, 230, 0.9); }
 [hidden] { display: none !important; }
 
 .overlay {
@@ -70,43 +73,46 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 }
 .card {
   position: relative; width: min(100%, 360px); max-height: 100%; overflow: auto; box-sizing: border-box;
-  background: var(--paper); border: 3px solid var(--ink); box-shadow: 0 8px 0 rgba(0,0,0,0.35);
+  background: var(--paper); border: 1.5px solid var(--edge); border-radius: 20px; box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
   padding: 24px 20px 20px; display: flex; flex-direction: column; gap: 12px;
   font-family: 'Courier Prime', monospace;
 }
 .stamp {
   position: absolute; top: 10px; right: 14px; padding: 4px 10px; border: 3px solid var(--stamp); color: var(--stamp);
-  background: var(--paper); font-family: 'Pixelify Sans', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 2px; transform: rotate(6deg);
+  background: var(--paper); border-radius: 6px; font-family: 'Fraunces', serif; font-size: 16px; font-weight: 800; letter-spacing: 1.5px; transform: rotate(6deg);
 }
 .sketch {
-  height: 180px; border: 3px dashed var(--stamp); display: flex; align-items: center; justify-content: center;
+  height: 180px; border: 2px dashed var(--stamp); border-radius: 12px; display: flex; align-items: center; justify-content: center;
   text-align: center; padding: 10px; box-sizing: border-box; font-family: 'Kalam', cursive; font-size: 18px; color: var(--stamp);
 }
+.sketch.art { border: none; padding: 0; }
+.sketch.art img, .slot .mini img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
 .fishname { margin: 0; font-family: 'Kalam', cursive; font-weight: 700; font-size: 30px; line-height: 1.1; color: var(--deep); }
 .facts { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 15px; font-weight: 700; }
 .note { margin: 0; font-family: 'Kalam', cursive; font-size: 19px; line-height: 1.35; color: #3d3a40; }
 .btn {
-  min-height: 52px; border: 3px solid var(--ink); box-shadow: 0 5px 0 var(--ink); background: var(--paper);
-  font-size: 20px; font-weight: 700; letter-spacing: 1px;
+  min-height: 52px; border: 1.5px solid rgba(43, 42, 51, 0.45); border-radius: 14px; box-shadow: 0 4px 0 rgba(43, 42, 51, 0.35); background: var(--paper);
+  font-size: 18px; font-weight: 700; letter-spacing: 0.5px;
 }
 .btn.primary { background: var(--gold); }
-.btn:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--ink); }
+.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(43, 42, 51, 0.35); }
 
 .journal {
   position: fixed; inset: 0; background: var(--paper); pointer-events: auto; overflow: auto;
   padding: max(16px, env(safe-area-inset-top)) 16px 32px; box-sizing: border-box; font-family: 'Courier Prime', monospace;
 }
 .jhead { display: flex; align-items: center; gap: 14px; max-width: 640px; margin: 0 auto; }
-.jhead h1 { margin: 0; font-size: 24px; letter-spacing: 2px; color: var(--deep); font-family: 'Pixelify Sans', sans-serif; }
-.sq { width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: transparent; border: 3px solid var(--ink); padding: 0; }
+.jhead h1 { margin: 0; font-size: 26px; letter-spacing: 0.5px; color: var(--deep); font-family: 'Fraunces', serif; font-weight: 700; }
+.sq { width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: transparent; border: 1.5px solid rgba(43, 42, 51, 0.45); border-radius: 50%; padding: 0; }
 .grid { max-width: 640px; margin: 18px auto 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
 .slot {
-  min-height: 120px; padding: 8px; box-sizing: border-box; border: 3px solid var(--ink); background: #fbf6ea;
+  min-height: 120px; padding: 8px; box-sizing: border-box; border: 1.5px solid var(--edge); border-radius: 12px; background: #fbf6ea; box-shadow: 0 2px 6px rgba(43, 42, 51, 0.08);
   display: flex; flex-direction: column; gap: 4px; text-align: left; font-family: 'Courier Prime', monospace;
 }
-.slot .mini { flex-grow: 1; min-height: 40px; border: 2px dashed #c98d84; display: flex; align-items: center; justify-content: center; font-family: 'Kalam', cursive; font-size: 13px; color: var(--stamp); }
-.slot.missing { background: var(--shade); border-style: dashed; border-color: #b9a787; align-items: center; justify-content: center; text-align: center; cursor: default; }
-.slot .q { font-family: 'Pixelify Sans', sans-serif; font-size: 30px; font-weight: 700; color: #a8956f; }
+.slot .mini.art { border: none; }
+.slot .mini { flex-grow: 1; min-height: 40px; border: 1.5px dashed #c98d84; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'Kalam', cursive; font-size: 13px; color: var(--stamp); }
+.slot.missing { background: var(--shade); border-style: dashed; border-color: #b9a787; box-shadow: none; align-items: center; justify-content: center; text-align: center; cursor: default; }
+.slot .q { font-family: 'Fraunces', serif; font-size: 30px; font-weight: 700; color: #a8956f; }
 .slot .no { font-size: 11px; color: var(--muted); }
 .slot .nm { font-family: 'Kalam', cursive; font-size: 15px; font-weight: 700; line-height: 1.05; }
 .slot .hint { font-family: 'Kalam', cursive; font-size: 14px; color: #5a4a3a; }
@@ -231,6 +237,20 @@ const FISH = [
   { id: 14, name: 'Old Boot Bass',       time: 'dusk',  depth: 'far',  w: 0.6, size: [70, 100], str: 0.9,  rarity: 'Legendary', note: 'Might be a boot. Did not eat.', hint: 'legendary', refuse: true },
   { id: 15, name: 'The Pier Ghost',      time: 'night', depth: 'far',  w: 0.4, size: [80, 120], str: 0.95, rarity: 'Legendary', note: 'Nobody believes me. Not eating a ghost.', hint: 'legendary', weather: 'rain', refuse: true },
 ];
+
+// Shauna's fish paintings (art/fish/). Fish without one yet show the dashed placeholder.
+const FISH_ART = { 1: 'fish-001-pier-perch', 2: 'fish-002-sulky-sardine', 3: 'fish-003-drizzle-darter' };
+function fishArtEl(f) {
+  if (!FISH_ART[f.id]) return null;
+  const im = document.createElement('img');
+  im.src = 'art/fish/' + FISH_ART[f.id] + '.webp'; im.alt = 'Painting of the ' + f.name; im.decoding = 'async';
+  return im;
+}
+function fillSketch(el, f, text) {
+  el.innerHTML = ''; const im = fishArtEl(f);
+  el.classList.toggle('art', !!im);
+  if (im) el.appendChild(im); else el.textContent = text;
+}
 
 /* ---------- Save ---------- */
 const SAVE_KEY = 'saltwhisker.save';
@@ -1078,7 +1098,8 @@ function updateHud() {
   if (S.state === 'caught') msg = '';
   const m = $('msg');
   if (m.textContent !== msg) m.textContent = msg;
-  m.style.fontFamily = S.state === 'bite' ? "'Pixelify Sans', sans-serif" : '';
+  m.style.fontFamily = S.state === 'bite' ? "'Fraunces', serif" : '';
+  m.style.fontWeight = S.state === 'bite' ? '800' : '';
   m.style.fontSize = S.state === 'bite' ? '26px' : '';
   $('panel').style.visibility = (S.state === 'caught' || S.state === 'flying') ? 'hidden' : 'visible';
 }
@@ -1090,7 +1111,7 @@ function showCatch(f, size, isNew, isRecord, dinnerNote) {
   $('catchNo').textContent = 'No. ' + String(f.id).padStart(3, '0');
   const per = periodOf(hourOf(SAVE.gm));
   $('catchWhen').textContent = per[0].toUpperCase() + per.slice(1) + ' · ' + (SAVE.weather === 'rain' ? 'Rain' : 'Clear');
-  $('catchSketch').textContent = '[Drawing of ' + f.name + ' coming soon]';
+  fillSketch($('catchSketch'), f, '[Drawing of ' + f.name + ' coming soon]');
   $('catchName').textContent = f.name;
   $('catchFacts').innerHTML = '';
   [size + ' cm', f.rarity, dinnerNote, f.id === DAILY ? "Today's fish" : null].filter(Boolean).forEach(t => {
@@ -1131,6 +1152,7 @@ function renderJournal() {
       const b = document.createElement('button'); b.className = 'slot';
       b.innerHTML = '<div class="mini">sketch</div><span class="no"></span><span class="nm"></span>';
       b.querySelector('.no').textContent = no; b.querySelector('.nm').textContent = f.name;
+      fillSketch(b.querySelector('.mini'), f, 'sketch');
       b.addEventListener('click', () => showDetail(f.id));
       grid.appendChild(b);
     } else {
@@ -1147,7 +1169,7 @@ function showDetail(id) {
   const el = $('journalDetail'); el.innerHTML = '';
   const add = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; el.appendChild(e); return e; };
   add('div', 'small', 'No. ' + String(f.id).padStart(3, '0') + ' · ' + f.rarity).style.color = 'var(--muted)';
-  add('div', 'sketch', '[Drawing of ' + f.name + ' coming soon]');
+  fillSketch(add('div', 'sketch'), f, '[Drawing of ' + f.name + ' coming soon]');
   add('h2', 'fishname', f.name);
   const facts = add('div', 'facts');
   ['Best ' + rec.best + ' cm', 'Caught ' + rec.n + (rec.n === 1 ? ' time' : ' times'), 'First ' + rec.first].forEach(t => { const s = document.createElement('span'); s.textContent = t; facts.appendChild(s); });

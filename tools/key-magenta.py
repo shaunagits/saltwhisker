@@ -6,6 +6,10 @@ dissolves into haze on wide screens, and saves a small WebP with transparency.
 
 Usage:
   python3 tools/key-magenta.py path/to/far-night.png art/far-night.webp
+  python3 tools/key-magenta.py --sprite path/to/bucket.png art/bucket.png
+
+--sprite is for props and characters: same keying and spill removal, cropped tight on all
+four sides with a small margin, no edge fades, saved as PNG (or WebP if the name says so).
 
 Prints the lighthouse lamp position in the cropped image (bright yellow pixels), which goes in
 FAR_NIGHT_LAMP or FAR_RECT.lamp in index.html. For a daytime image with no glowing lamp, read
@@ -15,7 +19,9 @@ import sys
 import numpy as np
 from PIL import Image
 
-src, dst = sys.argv[1], sys.argv[2]
+args = [a for a in sys.argv[1:] if a != '--sprite']
+sprite = '--sprite' in sys.argv
+src, dst = args[0], args[1]
 im = np.asarray(Image.open(src).convert('RGB')).astype(float)
 r, g, b = im[..., 0], im[..., 1], im[..., 2]
 
@@ -26,6 +32,23 @@ out = im.copy()
 out[..., 0] -= spill
 out[..., 2] -= spill
 out = np.clip(out, 0, 255)
+
+if sprite:
+    # props and characters have no purple in them: pull any leftover magenta tint out of edge fur
+    r2, g2, b2 = out[..., 0], out[..., 1], out[..., 2]
+    tint = np.clip(np.minimum(r2, b2) - g2 - 12, 0, None) * (alpha < 0.98)
+    out[..., 0] -= tint
+    out[..., 2] -= tint
+    m = alpha > 0.5
+    ys, xs = np.where(m)
+    pad = 6
+    t, b0 = max(0, ys.min() - pad), min(m.shape[0], ys.max() + 1 + pad)
+    l, r0 = max(0, xs.min() - pad), min(m.shape[1], xs.max() + 1 + pad)
+    rgba = np.dstack([out, alpha * 255]).astype(np.uint8)[t:b0, l:r0]
+    fmt = 'WEBP' if dst.lower().endswith('.webp') else 'PNG'
+    Image.fromarray(rgba, 'RGBA').save(dst, fmt, **({'quality': 90} if fmt == 'WEBP' else {'optimize': True}))
+    print('sprite crop left', l, 'top', t, '| size', rgba.shape[1], 'x', rgba.shape[0])
+    sys.exit(0)
 
 rows = np.where((alpha > 0.5).sum(axis=1) > 0)[0]
 top, bottom = max(0, rows.min() - 10), rows.max() + 1

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Saltwhisker</title>
-<meta name="description" content="A tuxedo cat in a yellow sou&#39;wester fishes off a pixel pier for his dinner, and keeps a journal of every catch.">
+<meta name="description" content="A tuxedo cat in a yellow sou&#39;wester fishes off a painted pier for his dinner, and keeps a journal of every catch.">
 <meta name="theme-color" content="#1d3b52">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%231d3b52'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%23f3ead8'/%3E%3Crect x='7' y='3' width='2' height='10' fill='%232b2a33'/%3E%3Crect x='4' y='6' width='2' height='1' fill='%23b5453a'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,6 +37,9 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   font-size: 17px; font-weight: 600; white-space: nowrap;
 }
 .chip svg { flex-shrink: 0; }
+.topleft { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.home { width: 44px; padding: 0; justify-content: center; color: var(--ink); text-decoration: none; pointer-events: auto; }
+.home:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .topwrap { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
 .topwrap .top { align-self: stretch; }
 .dinner { height: 40px; font-size: 16px; gap: 8px; }
@@ -123,7 +126,12 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 <div class="hud">
   <div class="topwrap">
   <div class="top">
+    <div class="topleft">
+    <a class="chip home" href="https://games.shauna.digital/" aria-label="Back to all games">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </a>
     <div class="chip" id="clock"><span id="clockIcon"></span><span id="clockText">DAY 1 · 2:00 PM</span></div>
+    </div>
     <button class="chip" id="journalBtn" aria-label="Open journal">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4z"/><path d="M20 4h-4a3 3 0 0 0-3 3"/><path d="M20 4v14h-6"/></svg>
       <span id="foundCount">0/15</span>
@@ -259,9 +267,9 @@ const DAILY = dailyFishId();
 
 /* ---------- Clock and palettes ---------- */
 const PAL = {
-  day:   { top: '#6fb8dc', bot: '#cdeef2', sun: '#fff1b8', sunY: 0,   sea: '#2e86ab', seaDeep: '#1f6488', seaDeeper: '#164a68', wave: '#9fdbe8', wood: '#8a5a3b', woodLight: '#b98a5e', woodDark: '#5a3824', post: '#4a2f1e', cloud: '#ffffff', land: '#5b8f7a', line: '#ffffff', stars: 0,    glow: 0,    gull: 1, glint: 0.5,  shadow: 0.22 },
-  dusk:  { top: '#433a78', bot: '#f6a463', sun: '#ffd38a', sunY: 30,  sea: '#5b5a93', seaDeep: '#413f74', seaDeeper: '#2b2a55', wave: '#f3b88f', wood: '#64402e', woodLight: '#93603f', woodDark: '#3f271a', post: '#2e1c13', cloud: '#f7b99a', land: '#3d3560', line: '#fbe7d4', stars: 0.35, glow: 0.12, gull: 1, glint: 0.8,  shadow: 0.25 },
-  night: { top: '#0b1030', bot: '#26365f', sun: '#f4e9c1', sunY: -12, sea: '#17324f', seaDeep: '#10253d', seaDeeper: '#0a182a', wave: '#55779f', wood: '#3e2d2b', woodLight: '#5d443b', woodDark: '#271b1a', post: '#1c1313', cloud: '#2f3c66', land: '#141b38', line: '#c9d6ea', stars: 1,    glow: 0.2,  gull: 0, glint: 0.35, shadow: 0.35 },
+  day:   { top: '#6fb8dc', bot: '#cdeef2', sun: '#fff1b8', sunY: 0,   sea: '#2e86ab', seaDeep: '#1f6488', seaDeeper: '#164a68', wave: '#9fdbe8', wood: '#8a5a3b', woodLight: '#b98a5e', woodDark: '#5a3824', post: '#4a2f1e', cloud: '#ffffff', land: '#5b8f7a', line: '#ffffff', stars: 0,    glow: 0,    gull: 1, glint: 0.5,  shadow: 0.22, tint: '#ffffff' },
+  dusk:  { top: '#433a78', bot: '#f6a463', sun: '#ffd38a', sunY: 30,  sea: '#5b5a93', seaDeep: '#413f74', seaDeeper: '#2b2a55', wave: '#f3b88f', wood: '#64402e', woodLight: '#93603f', woodDark: '#3f271a', post: '#2e1c13', cloud: '#f7b99a', land: '#3d3560', line: '#fbe7d4', stars: 0.35, glow: 0.12, gull: 1, glint: 0.8,  shadow: 0.25, tint: '#d9a39c' },
+  night: { top: '#0b1030', bot: '#26365f', sun: '#f4e9c1', sunY: -12, sea: '#17324f', seaDeep: '#10253d', seaDeeper: '#0a182a', wave: '#55779f', wood: '#3e2d2b', woodLight: '#5d443b', woodDark: '#271b1a', post: '#1c1313', cloud: '#2f3c66', land: '#141b38', line: '#c9d6ea', stars: 1,    glow: 0.2,  gull: 0, glint: 0.35, shadow: 0.35, tint: '#6a77a6' },
 };
 const KEYS = [[0, 'night'], [5, 'night'], [7, 'day'], [16.5, 'day'], [18.5, 'dusk'], [20, 'night'], [24, 'night']];
 function hourOf(gm) { return (gm / 60) % 24; }
@@ -297,7 +305,7 @@ resize();
 
 /* ---------- Game state ---------- */
 const TIP = { x: 132, y: 60 };     // rod tip at rest
-const HAND = { x: 111.5, y: 79.5 };   // Saltwhisker's raised paw
+const HAND = { x: 111.5, y: 79.5 };   // Saltwhisker's raised paw (moved each frame by the painted cat)
 const CAT = { x: 96, y: 70 };
 const S = {
   state: 'idle',       // idle | charging | flying | waiting | bite | reeling | caught | message
@@ -357,7 +365,7 @@ function release() {
   S.holding = false;
   if (S.state === 'charging') cast();
 }
-function isUiTarget(e) { return e.target.closest && e.target.closest('button, .overlay, .journal, .debug'); }
+function isUiTarget(e) { return e.target.closest && e.target.closest('a, button, .overlay, .journal, .debug'); }
 window.addEventListener('pointerdown', e => { if (isUiTarget(e)) return; e.preventDefault(); press(); });
 window.addEventListener('pointerup', release);
 window.addEventListener('pointercancel', release);
@@ -648,11 +656,17 @@ function drawFar(P) {
     let lx = FAR_RECT.x + FAR_RECT.lamp[0] * k0, ly = y + FAR_RECT.lamp[1] * k0;
     if (nightReady) { lx = lerp(lx, nlx, toNight); ly = lerp(ly, nly, toNight); }
     const pulse = reduceMotion ? 1 : 0.6 + 0.4 * Math.abs(Math.sin(performance.now() / 900));
-    ctx.globalAlpha = clamp(P.glow * 5, 0, 1) * pulse; ctx.fillStyle = '#ffd97a';
-    ctx.beginPath(); ctx.arc(lx, ly, 2.2, 0, 7); ctx.fill();
-    ctx.globalAlpha *= 0.35; ctx.beginPath(); ctx.arc(lx, ly, 6, 0, 7); ctx.fill();
+    const a = clamp(P.glow * 5, 0, 1) * pulse;
+    softGlow(lx, ly, 7, '255,217,122', a * 0.7);
+    ctx.globalAlpha = a; ctx.fillStyle = '#ffe9b0'; ctx.beginPath(); ctx.arc(lx, ly, 0.9, 0, 7); ctx.fill();
     ctx.globalAlpha = 1;
   }
+}
+function softGlow(x, y, r, rgb, a) {
+  if (a <= 0.01) return;
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+  g.addColorStop(0, `rgba(${rgb},${a})`); g.addColorStop(0.35, `rgba(${rgb},${a * 0.45})`); g.addColorStop(1, `rgba(${rgb},0)`);
+  ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2);
 }
 function nightSkyAmount(P) {
   if (!SKY_NIGHT.complete || !SKY_NIGHT.naturalWidth) return 0;
@@ -677,6 +691,147 @@ function drawPaintedSky(img) {
   ctx.imageSmoothingEnabled = false;
 }
 
+/* ---------- Painted scene pieces ---------- */
+// Shauna's painted pier, lamp, bucket and Saltwhisker. Built from her images by tools/build-painted-art.py.
+// Each is one daytime painting. Dusk and night multiply a tint color over it (P.tint), cached per piece.
+// The cat is four same-size layers (tail, back ear, front ear, body); ears and tail turn around their roots.
+function loadImg(src) { const i = new Image(); i.src = src; return i; }
+const ART = {
+  pier: loadImg('art/pier.webp'), lamp: loadImg('art/lamp.webp'), bucket: loadImg('art/bucket.webp'),
+  body: loadImg('art/cat-body.webp'), earB: loadImg('art/cat-ear-back.webp'), earF: loadImg('art/cat-ear-front.webp'), tail: loadImg('art/cat-tail.webp'),
+};
+const imgReady = i => i.complete && i.naturalWidth > 0;
+function sceneReady() { return Object.values(ART).every(imgReady); }
+// Placement in world pixels. Pier strip: deck top at image row 163 sits on y 86, its end at image x 4083 sits on x 108.
+const PIER = { k: 10 / 141, deckRow: 163, endCol: 4083 };
+PIER.x = 108 - PIER.endCol * PIER.k; PIER.y = 86 - PIER.deckRow * PIER.k;
+const LAMP = { x: 86.8, h: 30, glass: [63, 115] };          // glass = lantern centre in image pixels
+const BUCKET = { x: 64, h: 8.5 };
+// Cat layers are 393 x 406. Feet at row 403 rest on the deck; the paw (378, 208) holds the rod.
+const CATP = { x: 96.6, k: 16 / 406, feet: 403, paw: [378, 208], eye: [265, 95],
+  earB: [211, 66], earF: [249, 36], tail: [124, 364] };
+CATP.y = 86 - CATP.feet * CATP.k;
+function lampGlass() { const k = LAMP.h / ART.lamp.naturalHeight; return [LAMP.x + LAMP.glass[0] * k, 86 - LAMP.h + LAMP.glass[1] * k]; }
+
+const TINTS = {};
+function tinted(key, im, col) {
+  if (col === '#ffffff') return im;
+  let c = TINTS[key];
+  const now = performance.now();
+  if (c && (c.col === col || now - c.at < 250)) return c.cv;
+  if (!c) { c = TINTS[key] = { cv: document.createElement('canvas') }; c.cv.width = im.naturalWidth; c.cv.height = im.naturalHeight; }
+  const x = c.cv.getContext('2d'), w = c.cv.width, h = c.cv.height;
+  x.globalCompositeOperation = 'copy'; x.drawImage(im, 0, 0);
+  x.globalCompositeOperation = 'multiply'; x.fillStyle = col; x.fillRect(0, 0, w, h);
+  x.globalCompositeOperation = 'destination-in'; x.drawImage(im, 0, 0);
+  c.col = col; c.at = now;
+  return c.cv;
+}
+const SILS = {};
+function silhouette(key, im, col) {
+  // flat-colour copy of a layer, drawn slightly offset behind it as a night rim light
+  if (!SILS[key]) {
+    const cv2 = document.createElement('canvas'); cv2.width = im.naturalWidth; cv2.height = im.naturalHeight;
+    const x = cv2.getContext('2d'); x.drawImage(im, 0, 0);
+    x.globalCompositeOperation = 'source-in'; x.fillStyle = col; x.fillRect(0, 0, cv2.width, cv2.height);
+    SILS[key] = cv2;
+  }
+  return SILS[key];
+}
+function mulHex(a, b) { const pa = hexToRgb(a), pb = hexToRgb(b); return '#' + pa.map((v, i) => Math.round(v * pb[i] / 255).toString(16).padStart(2, '0')).join(''); }
+function sceneTint(P) { return SAVE.weather === 'rain' ? mulHex(P.tint, '#c4c8d0') : P.tint; }
+
+let PIER_WATER = null;
+function drawPier(P) {
+  const src = tinted('pier', ART.pier, sceneTint(P)), k = PIER.k, w = ART.pier.naturalWidth, h = ART.pier.naturalHeight;
+  // under the surface the pilings fade into the water: a copy with an alpha ramp below the waterline
+  if (!PIER_WATER || PIER_WATER.src !== src || PIER_WATER.col !== (TINTS.pier ? TINTS.pier.col : '')) {
+    const c = PIER_WATER ? PIER_WATER.cv : document.createElement('canvas');
+    c.width = w; c.height = h;
+    const x = c.getContext('2d'), wl = (96 - PIER.y) / k;
+    x.globalCompositeOperation = 'copy'; x.drawImage(src, 0, 0);
+    const g = x.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(wl / h, 'rgba(0,0,0,1)'); g.addColorStop(wl / h + 0.002, 'rgba(0,0,0,0.6)'); g.addColorStop(1, 'rgba(0,0,0,0.12)');
+    x.globalCompositeOperation = 'destination-in'; x.fillStyle = g; x.fillRect(0, 0, w, h);
+    PIER_WATER = { cv: c, src, col: TINTS.pier ? TINTS.pier.col : '' };
+  }
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(PIER_WATER.cv, PIER.x, PIER.y, w * k, h * k);
+}
+function drawProps(P) {
+  const col = sceneTint(P);
+  const lk = LAMP.h / ART.lamp.naturalHeight;
+  ctx.drawImage(tinted('lamp', ART.lamp, col), LAMP.x, 86 - LAMP.h, ART.lamp.naturalWidth * lk, LAMP.h);
+  // lit lantern glass
+  if (P.glow > 0.01) {
+    const [gx, gy] = lampGlass(), on = clamp(P.glow / 0.12, 0, 1);
+    ctx.globalAlpha = on; ctx.fillStyle = '#ffe2a0';
+    ctx.beginPath(); ctx.ellipse(gx, gy, 1.5, 2.1, 0, 0, 7); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  const bk = BUCKET.h / ART.bucket.naturalHeight;
+  ctx.drawImage(tinted('bucket', ART.bucket, col), BUCKET.x, 86 - BUCKET.h, ART.bucket.naturalWidth * bk, BUCKET.h);
+}
+function drawPaintedCat(P) {
+  const pose = catPose(), k = CATP.k, col = sceneTint(P);
+  const now = performance.now() / 1000;
+  const still = reduceMotion;
+  // body squash: crouch when the line is tight, a slow breath otherwise
+  const sy = pose.crouch ? 0.91 : 1 + (still ? 0 : Math.sin(now * 1.8) * 0.006);
+  const sx = pose.crouch ? 1.04 : 1;
+  const nib = S.state === 'waiting' && S.t - S.lastNibble < 0.3;
+  const alert = pose.ears;
+  const twitch = nib && !still ? Math.sin((S.t - S.lastNibble) * 60) * 6 : 0;
+  const earB = alert ? 0 + twitch : -13, earF = alert ? 3 + twitch * 0.7 : -10;
+  const earS = alert ? 1.12 : 0.97;
+  const tailRot = pose.puff ? -9 : (still ? 0 : Math.sin(now * 1.3) * 3);
+  const tailS = pose.puff ? 1.24 : 1;
+  const rim = clamp((P.stars - 0.4) / 0.6, 0, 1);
+  const feetX = CATP.x + 300 * k, feetY = 86;
+  ctx.imageSmoothingEnabled = true;
+  ctx.save();
+  // squash around the feet
+  ctx.translate(feetX, feetY); ctx.scale(sx, sy); ctx.translate(-feetX, -feetY);
+  ctx.translate(CATP.x, CATP.y); ctx.scale(k, k);
+  const layer = (key, im, piv, rot, sc) => {
+    ctx.save();
+    if (piv) { ctx.translate(piv[0], piv[1]); ctx.rotate(rot * Math.PI / 180); ctx.scale(sc, sc); ctx.translate(-piv[0], -piv[1]); }
+    if (rim > 0.05) {
+      ctx.globalAlpha = rim * 0.4;
+      const s2 = silhouette(key, im, '#8ea3d8');
+      ctx.drawImage(s2, -6, -5); ctx.drawImage(s2, 5, -4);
+      ctx.globalAlpha = 1;
+    }
+    ctx.drawImage(tinted('cat-' + key, im, col), 0, 0);
+    ctx.restore();
+  };
+  layer('tail', ART.tail, CATP.tail, tailRot, tailS);
+  layer('earB', ART.earB, CATP.earB, earB, earS);
+  layer('earF', ART.earF, CATP.earF, earF, earS);
+  layer('body', ART.body, null);
+  // blink every few seconds (not with reduced motion)
+  if (!still && (now % 4.3) < 0.13) {
+    ctx.fillStyle = mulHex('#55525c', col);
+    ctx.beginPath(); ctx.ellipse(CATP.eye[0], CATP.eye[1], 10, 11, 0, 0, 7); ctx.fill();
+    ctx.strokeStyle = mulHex('#2c2a31', col); ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(CATP.eye[0] - 10, CATP.eye[1] + 2); ctx.quadraticCurveTo(CATP.eye[0], CATP.eye[1] + 6, CATP.eye[0] + 10, CATP.eye[1] + 1); ctx.stroke();
+  }
+  ctx.restore();
+  // the rod sits in the paw, wherever the squash put it
+  HAND.x = feetX + (CATP.x + CATP.paw[0] * k - feetX) * sx;
+  HAND.y = feetY + (CATP.y + CATP.paw[1] * k - feetY) * sy;
+  // warm lamplight spilling onto the cat and the deck at night
+  const lit = clamp(P.glow / 0.2, 0, 1);
+  if (lit > 0.05) {
+    const [gx, gy] = lampGlass();
+    const rg = ctx.createRadialGradient(gx, gy, 1, gx, gy, 24);
+    rg.addColorStop(0, 'rgba(255,196,110,0.5)'); rg.addColorStop(1, 'rgba(255,196,110,0)');
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = lit * 0.35;
+    ctx.fillStyle = rg; ctx.fillRect(gx - 24, gy - 24, 48, 48);
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+  }
+}
+
 /* ---------- Draw ---------- */
 function R(x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); }
 function draw() {
@@ -690,10 +845,11 @@ function draw() {
   ctx.setTransform(SC * DPR, 0, 0, SC * DPR, (-OX + sx) * SC * DPR, (-OY + sy) * SC * DPR);
   ctx.imageSmoothingEnabled = false;
 
-  // sky bands
+  // code sky: a soft gradient under the paintings (shows most at dusk)
   const g = rainy ? 0.35 : 0;
-  const bands = [[0, 20], [20, 20], [40, 18], [58, 16], [74, 12], [86, 10]];
-  bands.forEach(([y, hh], i) => R(-200, y - (i === 0 ? 200 : 0), 600, hh + (i === 0 ? 200 : 0), mixHex(mixHex(P.top, P.bot, i / 5), '#6d7480', g)));
+  const skyG = ctx.createLinearGradient(0, 0, 0, 96);
+  skyG.addColorStop(0, mixHex(P.top, '#6d7480', g)); skyG.addColorStop(1, mixHex(P.bot, '#6d7480', g));
+  ctx.fillStyle = skyG; ctx.fillRect(-300, -300, 800, 396);
   // painted daytime sky on top of the code sky; fades out toward dusk and night
   const paint = paintedSkyAmount(P), paintN = nightSkyAmount(P);
   if (paint > 0.01) { ctx.globalAlpha = paint; drawPaintedSky(SKY_DAY); }
@@ -705,7 +861,8 @@ function draw() {
   // stars
   if (P.stars > 0.01 && !rainy && paintN < 0.99) {
     ctx.globalAlpha = P.stars * (1 - paintN);
-    [[20,12],[46,30],[71,9],[98,24],[122,6],[139,34],[166,16],[185,41],[8,44],[88,46],[112,40],[58,52],[-20,20],[-40,38],[220,14],[236,30]].forEach(([x, y]) => R(x, y, 1, 1, '#f4e9c1'));
+    ctx.fillStyle = '#f4e9c1';
+    [[20,12],[46,30],[71,9],[98,24],[122,6],[139,34],[166,16],[185,41],[8,44],[88,46],[112,40],[58,52],[-20,20],[-40,38],[220,14],[236,30]].forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, 0.35, 0, 7); ctx.fill(); });
     ctx.globalAlpha = 1;
   }
   // sun or moon (hidden in rain)
@@ -724,29 +881,47 @@ function draw() {
   const drift = (SAVE.gm * 0.4) % 260;
   const cloudC = rainy ? '#8a909c' : P.cloud;
   ctx.globalAlpha = rainy ? 1 : 0.92 * codeSky;
+  ctx.fillStyle = cloudC;
   [[26, 32, 22, 4, 31, 29, 11, 3], [114, 22, 18, 3, 118, 19, 8, 3], [170, 38, 14, 3, 0, 0, 0, 0], [-30, 26, 18, 3, -26, 23, 9, 3]].forEach(c => {
     const off = ((c[0] + drift + 60) % 320) - 60 - c[0];
-    R(c[0] + off, c[1], c[2], c[3], cloudC); if (c[6]) R(c[4] + off, c[5], c[6], c[7], cloudC);
+    const puff = (x, y, w, h) => { ctx.beginPath(); ctx.ellipse(x + w / 2, y + h / 2, w / 2, h * 0.8, 0, 0, 7); ctx.fill(); };
+    puff(c[0] + off, c[1], c[2], c[3]); if (c[6]) puff(c[4] + off, c[5], c[6], c[7]);
   });
   if (rainy) { R(-200, 0, 600, 14, '#7b818c'); R(-200, 14, 600, 4, '#868c97'); }
   ctx.globalAlpha = 1;
   // gulls
   if (P.gull > 0.5 && !rainy) {
     const gx = (SAVE.gm * 1.5) % 300 - 50;
-    R(gx, 42, 3, 1, '#3b3b48'); R(gx + 3, 43, 2, 1, '#3b3b48'); R(gx + 5, 42, 3, 1, '#3b3b48');
+    const flap = reduceMotion ? 0 : Math.sin(performance.now() / 160) * 0.6;
+    ctx.strokeStyle = '#4a4a58'; ctx.lineWidth = 0.45; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(gx, 42 - flap); ctx.quadraticCurveTo(gx + 2, 41.2, gx + 3.5, 43); ctx.quadraticCurveTo(gx + 5, 41.2, gx + 7, 42 - flap); ctx.stroke();
   }
   // land
   if (farReady()) drawFar(P);
   else { R(-200, 90, 244, 6, P.land); R(8, 86, 24, 4, P.land); R(160, 92, 240, 4, P.land); }
   // sea
-  R(-200, 96, 600, 26, P.sea); R(-200, 122, 600, 36, P.seaDeep); R(-200, 158, 600, 242, P.seaDeeper);
-  if (!rainy) { ctx.globalAlpha = P.glint; R(140, 97, 18, 1, P.sun); R(144, 100, 10, 1, P.sun); ctx.globalAlpha = 1; }
+  const seaG = ctx.createLinearGradient(0, 96, 0, 175);
+  seaG.addColorStop(0, mixHex(P.sea, P.bot, 0.3)); seaG.addColorStop(0.2, P.sea); seaG.addColorStop(0.55, P.seaDeep); seaG.addColorStop(1, P.seaDeeper);
+  ctx.fillStyle = seaG; ctx.fillRect(-300, 96, 800, 400);
+  ctx.globalAlpha = 0.35; R(-300, 95.7, 800, 0.6, mixHex(P.bot, '#ffffff', 0.3)); ctx.globalAlpha = 1;   // soft horizon
+  ctx.imageSmoothingEnabled = true;
+  if (!rainy) {
+    ctx.globalAlpha = P.glint * 0.55; ctx.fillStyle = P.sun;
+    [[149, 97.4, 9, 0.35], [149, 100.2, 5, 0.3], [150, 103, 3, 0.25]].forEach(([x, y, rx, ry]) => { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, 7); ctx.fill(); });
+    ctx.globalAlpha = 1;
+  }
   const wv = reduceMotion ? 0 : Math.sin(performance.now() / 700) * 1.5;
-  [[58,100,6],[112,104,8],[164,99,5],[20,107,7],[172,110,6],[86,114,5],[40,118,6],[150,117,7],[122,128,5],[-10,103,6],[200,106,7]].forEach(([x, y, w], i) => R(x + (i % 2 ? wv : -wv), y, w, 1, P.wave));
+  ctx.strokeStyle = P.wave; ctx.lineWidth = 0.45; ctx.lineCap = 'round'; ctx.globalAlpha = 0.6;
+  [[58,100,6],[112,104,8],[164,99,5],[20,107,7],[172,110,6],[86,114,5],[40,118,6],[150,117,7],[122,128,5],[-10,103,6],[200,106,7],[134,138,6],[64,132,5]].forEach(([x, y, w], i) => {
+    const x0 = x + (i % 2 ? wv : -wv);
+    ctx.beginPath(); ctx.moveTo(x0, y); ctx.quadraticCurveTo(x0 + w / 2, y - 0.7, x0 + w, y); ctx.stroke();
+  });
+  ctx.globalAlpha = 1;
   // ambient fish shadows in deep water
-  ctx.globalAlpha = P.shadow;
+  ctx.globalAlpha = P.shadow; ctx.fillStyle = '#000';
   const amb = (performance.now() / 1000) * (reduceMotion ? 0 : 3);
-  R(118 + Math.sin(amb / 4) * 6, 140, 14, 4, '#000'); R(70 - Math.sin(amb / 5) * 8, 166, 10, 3, '#000'); R(138 + Math.sin(amb / 6) * 5, 182, 22, 6, '#000');
+  const fishShape = (x, y, w) => { ctx.beginPath(); ctx.ellipse(x + w / 2, y, w / 2, w / 6, 0, 0, 7); ctx.moveTo(x + 1, y); ctx.lineTo(x - w * 0.2, y - w * 0.14); ctx.lineTo(x - w * 0.2, y + w * 0.14); ctx.fill(); };
+  fishShape(118 + Math.sin(amb / 4) * 6, 142, 14); fishShape(70 - Math.sin(amb / 5) * 8, 167, 10); fishShape(138 + Math.sin(amb / 6) * 5, 185, 22);
   ctx.globalAlpha = 1;
   // hooked/approaching fish shadow
   const sh = S.shadow;
@@ -754,9 +929,23 @@ function draw() {
     ctx.globalAlpha = 0.45;
     const x = (S.state === 'reeling' || S.state === 'bite') ? S.bob.x - sh.w / 2 + Math.sin(S.t * 12) * 1.5 : (sh.cx ?? sh.x);
     const y = (S.state === 'reeling' || S.state === 'bite') ? 106 : sh.y;
-    R(x, y, sh.w, Math.max(2, sh.w / 3), '#000'); R(x - 2, y + 0.5, 2, Math.max(1, sh.w / 3 - 1), '#000');
+    const hh = Math.max(2, sh.w / 3);
+    ctx.fillStyle = '#000';
+    ctx.beginPath(); ctx.ellipse(x + sh.w / 2, y + hh / 2, sh.w / 2, hh / 2, 0, 0, 7);
+    ctx.moveTo(x + 0.5, y + hh / 2); ctx.lineTo(x - 2.5, y); ctx.lineTo(x - 2.5, y + hh); ctx.fill();
     ctx.globalAlpha = 1;
   }
+  if (sceneReady()) {
+    drawPier(P);
+    // glow around the lamp, behind the lamp post
+    if (P.glow > 0.01) {
+      const [gx, gy] = lampGlass();
+      softGlow(gx, gy, 18, '255,207,107', clamp(P.glow * 3.5, 0, 0.75));
+    }
+    drawProps(P);
+    drawPaintedCat(P);
+  } else {
+  // pixel stand-ins while the paintings load
   // pilings
   [8, 38, 68, 98].forEach(x => { R(x, 93, 3, 34, P.post); ctx.globalAlpha = 0.6; R(x - 2, 98, 7, 1, P.wave); ctx.globalAlpha = 1; });
   // deck
@@ -774,14 +963,19 @@ function draw() {
   R(70, 82, 7, 4, '#5f7d8c'); R(69, 81, 9, 1, '#88a4b0');
   // Saltwhisker
   drawCat(P);
+  }
 
   // rod tip position
   let tip = { x: TIP.x, y: TIP.y };
   if (S.state === 'charging') { tip = { x: lerp(TIP.x, 116, S.power), y: lerp(TIP.y, 52, S.power) }; }
   if (S.state === 'reeling') { const bend = clamp(S.tension, 0, 1) + (S.surgeLeft > 0 ? 0.25 : 0); tip = { x: TIP.x + bend * 3, y: TIP.y + bend * 9 + (S.surgeLeft > 0 && !reduceMotion ? Math.sin(S.t * 40) : 0) }; }
   if (S.state === 'bite') tip.y += 2;
-  ctx.strokeStyle = '#6b4a2e'; ctx.lineWidth = 1.2;
-  ctx.beginPath(); ctx.moveTo(HAND.x, HAND.y); ctx.lineTo(tip.x, tip.y); ctx.stroke();
+  // bamboo rod, thicker at the paw
+  ctx.imageSmoothingEnabled = true; ctx.lineCap = 'round';
+  const midx = lerp(HAND.x, tip.x, 0.5), midy = lerp(HAND.y, tip.y, 0.5);
+  ctx.strokeStyle = mulHex('#8a6238', sceneTint(P)); ctx.lineWidth = 0.9;
+  ctx.beginPath(); ctx.moveTo(HAND.x - 1, HAND.y + 0.6); ctx.lineTo(midx, midy); ctx.stroke();
+  ctx.lineWidth = 0.55; ctx.beginPath(); ctx.moveTo(midx, midy); ctx.lineTo(tip.x, tip.y); ctx.stroke();
 
   // bobber + line
   const inWater = ['flying', 'waiting', 'bite', 'reeling'].includes(S.state);
@@ -801,16 +995,20 @@ function draw() {
   else ctx.quadraticCurveTo((tip.x + bx) / 2, Math.max(tip.y, by) + 4, bx, by);
   ctx.stroke(); ctx.globalAlpha = 1;
   if (S.state !== 'reeling') {
-    R(bx - 1.5, by - 2, 3, 2, '#d8433a'); R(bx - 1.5, by, 3, 2, '#f4f1ea');
+    ctx.fillStyle = '#f4f1ea'; ctx.beginPath(); ctx.arc(bx, by, 1.4, 0, Math.PI); ctx.fill();
+    ctx.fillStyle = '#d8433a'; ctx.beginPath(); ctx.arc(bx, by, 1.4, Math.PI, 2 * Math.PI); ctx.fill();
+    ctx.strokeStyle = '#5a3a2a'; ctx.lineWidth = 0.3; ctx.beginPath(); ctx.moveTo(bx, by - 1.4); ctx.lineTo(bx, by - 2.6); ctx.stroke();
   }
   if (inWater && S.state !== 'flying') {
     const rp = reduceMotion ? 0 : (S.t * 6) % 4;
-    R(bx - 5 - rp, 104, 11 + rp * 2, 1, P.wave);
+    ctx.strokeStyle = P.wave; ctx.lineWidth = 0.4; ctx.globalAlpha = 0.8 - rp * 0.15;
+    ctx.beginPath(); ctx.ellipse(bx, by + 1.2, 3.5 + rp * 1.5, 0.6 + rp * 0.15, 0, 0, 7); ctx.stroke(); ctx.globalAlpha = 1;
   }
   if (S.state === 'bite') { R(bx - 0.5, by - 12, 2, 5, '#ffcf6b'); R(bx - 0.5, by - 6, 2, 2, '#ffcf6b'); }
 
   // splashes
-  for (const p of S.splashes) { ctx.globalAlpha = 1 - p.t / 0.6; R(p.x, p.y, 1, 1, '#f4f1ea'); }
+  ctx.fillStyle = '#f4f1ea';
+  for (const p of S.splashes) { ctx.globalAlpha = 1 - p.t / 0.6; ctx.beginPath(); ctx.arc(p.x, p.y, 0.5, 0, 7); ctx.fill(); }
   ctx.globalAlpha = 1;
   // rain
   if (rainy) { ctx.globalAlpha = 0.55; for (const r of S.rain) R(r.x, r.y, 0.6, 3, '#c9d6ea'); ctx.globalAlpha = 1; }

@@ -1,6 +1,6 @@
 # Saltwhisker
 
-A pixel-art fishing game for the browser. Saltwhisker, a tuxedo cat in a yellow sou'wester, fishes off the end of an ocean pier for his dinner and keeps a journal (the Tidebook) of everything he catches.
+A painted fishing game for the browser. Saltwhisker, a tuxedo cat in a yellow sou'wester, fishes off the end of an ocean pier for his dinner and keeps a journal (the Tidebook) of everything he catches.
 
 Play it at https://games.shauna.digital/saltwhisker/
 
@@ -47,5 +47,13 @@ Add `?debug` to the URL for a small panel to jump the clock, toggle rain, force 
 - `far-day.webp` and `far-night.webp`: the distant village and lighthouse, cut out from a magenta background, cropped to their content, with soft faded side edges. The night painting has a slightly different layout, so it is lined up on the lighthouse (`FAR_NIGHT_LAMP`). Dusk uses a tinted copy of the day layer. The lighthouse light pulses in code at dusk and night.
 
 To process a new coast image: `python3 tools/key-magenta.py input.png art/far-name.webp`. The full how-to, the screen-coverage math and the style-neutral prompts are in the local notes (`_private/findings/`, not committed). A dusk painting follows the same pattern in `drawPaintedSky` and `drawFar`.
+
+**Painted scene pieces**, also Shauna's, each one daytime painting tinted in code for dusk and night (`P.tint`):
+
+- `pier.webp`: one strip made of two repeats of the middle section plus the end section. Below the waterline it fades into the water.
+- `lamp.webp` and `bucket.webp`: props on the deck. The lantern glows in code at dusk and night.
+- `cat-body.webp`, `cat-ear-back.webp`, `cat-ear-front.webp`, `cat-tail.webp`: Saltwhisker as a puppet. Ears and tail turn around their roots for the nibble and bite cues, the body squashes when he crouches, and he blinks. A soft rim light outlines him at night.
+
+To rebuild them from new images: key each one with `python3 tools/key-magenta.py --sprite`, then run `python3 tools/build-painted-art.py work art`. The cut shapes for the ears and tail are at the top of that script. Placement constants (`PIER`, `LAMP`, `BUCKET`, `CATP`) are in `index.html`. Water, the rod, line, bobber and fish shadows are drawn in code in soft shapes to match.
 
 The fish and Saltwhisker drawings will be hand-drawn by Shauna and dropped in later. Specs live on the design board: 1200 by 900 px transparent PNG per fish, named like `fish-007-grumble-grouper.png`.

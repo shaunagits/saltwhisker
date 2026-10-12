@@ -27,10 +27,14 @@
 <link rel="preload" as="image" href="art/sky-day.webp">
 <link rel="preload" as="image" href="art/sky-night.webp">
 <link rel="preload" as="image" href="art/cat-body.webp">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Shantell+Sans:wght@400..800&family=Kalam:wght@400;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<link rel="preload" as="font" type="font/woff2" href="fonts/shantell-sans-400-800.woff2" crossorigin>
 <style>
+/* Fonts live in fonts/ (SIL Open Font License, see fonts/LICENSE.md) so the game has no outside dependency. */
+@font-face { font-family: 'Courier Prime'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/courier-prime-400.woff2) format('woff2'); }
+@font-face { font-family: 'Courier Prime'; font-style: normal; font-weight: 700; font-display: swap; src: url(fonts/courier-prime-700.woff2) format('woff2'); }
+@font-face { font-family: 'Kalam'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/kalam-400.woff2) format('woff2'); }
+@font-face { font-family: 'Kalam'; font-style: normal; font-weight: 700; font-display: swap; src: url(fonts/kalam-700.woff2) format('woff2'); }
+@font-face { font-family: 'Shantell Sans'; font-style: normal; font-weight: 400 800; font-display: swap; src: url(fonts/shantell-sans-400-800.woff2) format('woff2'); }
 :root {
   --paper: #f3ead8; --shade: #e6d8bc; --ink: #2b2a33; --stamp: #b5453a;
   --tide: #2f7f7a; --deep: #1d3b52; --gold: #ffcf6b; --muted: #6b5c49;

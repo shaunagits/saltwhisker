@@ -279,10 +279,11 @@ const FISH = [
   { id: 106, name: 'Sunken Chest',        time: 'any', depth: 'far', w: 1.0, size: [40, 60], str: 0.55, rarity: 'Odds and Ends', fight: 'heavy', junk: true, refuse: true, chest: true, note: 'Full of sand and one gold coin. I feel lucky now.', hint: 'follow the map' },
 ];
 
-// Shauna's fish paintings (art/fish/). Fish without one yet show the dashed placeholder.
+// Shauna's fish and odds-and-ends paintings (art/fish/). Anything without one yet shows the dashed placeholder.
 const FISH_ART = { 1: 'fish-001-pier-perch', 2: 'fish-002-sulky-sardine', 3: 'fish-003-drizzle-darter', 4: 'fish-004-bucket-crab', 5: 'fish-005-gull-snack', 6: 'fish-006-dusky-flounder', 7: 'fish-007-grumble-grouper',
   8: 'fish-008-lamplight-grouper', 9: 'fish-009-longline-tuna', 10: 'fish-010-sock-eel', 11: 'fish-011-lanternfish', 12: 'fish-012-tiny-admiral', 13: 'fish-013-sunday-snapper',
-  14: 'fish-014-old-boot-bass', 15: 'fish-015-the-pier-ghost' };
+  14: 'fish-014-old-boot-bass', 15: 'fish-015-the-pier-ghost',
+  101: 'junk-101-message-in-a-bottle', 102: 'junk-102-torn-map', 103: 'junk-103-rubber-duck', 104: 'junk-104-empty-sardine-tin', 105: 'junk-105-single-flip-flop', 106: 'junk-106-sunken-chest' };
 function fishArtEl(f) {
   if (!FISH_ART[f.id]) return null;
   const im = document.createElement('img');

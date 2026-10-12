@@ -288,7 +288,7 @@ const TUNE = {
   slackEscape: 2.2,        // seconds of slack line before the fish gets away
   sweet: [0.3, 0.68],      // sweet zone on the tension bar for common fish (see sweetZone)
   sweetWidth: { Common: 0.38, Uncommon: 0.32, Rare: 0.26, Legendary: 0.2, 'Odds and Ends': 0.44 },
-  rainChance: 0.3,         // chance each new game day is rainy
+  rainChance: 0.3,         // share of calendar days that are rainy (the same days for every player)
   dailyBoost: 3,           // today's fish is this many times more likely
   dinnerGoal: 4,           // dinner points Walter needs each evening
   dinnerStart: 6,          // dinner window opens (game hour)
@@ -398,6 +398,13 @@ function clockGm() { const d = new Date(); return daysSince(SAVE.start) * 1440 +
 function setClockHour(hh) { const now = clockGm(); CLOCK.offset += (Math.floor(now / 1440) * 1440 + hh * 60) - now; }
 SAVE.gm = clockGm();
 function todayISO() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function weatherFor(iso) {
+  // a well-mixed hash of the date: about 30% of days rain, the same days everywhere
+  let h = 0x811c9dc5;
+  for (const ch of 'rain:' + iso) { h ^= ch.charCodeAt(0); h = Math.imul(h, 0x01000193) >>> 0; }
+  h ^= h >>> 16; h = Math.imul(h, 0x85ebca6b) >>> 0; h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35) >>> 0; h ^= h >>> 16;
+  return (h >>> 0) / 4294967296 < TUNE.rainChance ? 'rain' : 'clear';
+}
 function dailyFishId() {
   // Same fish for everyone on the same calendar day. Legendaries never.
   const s = todayISO().split('-').join('');
@@ -733,10 +740,10 @@ function update(dt) {
   // clock
   SAVE.gm = clockGm();
   const d = dayOf(SAVE.gm);
-  if (SAVE.dayRolled !== d) {   // a new real day since the last roll, including days away
-    SAVE.dayRolled = d;
-    SAVE.weather = Math.random() < TUNE.rainChance ? 'rain' : 'clear';
-  }
+  if (SAVE.dayRolled !== d) { SAVE.dayRolled = d; }
+  // weather comes from the calendar date, so every player gets the same rainy days
+  const today = todayISO();
+  if (S.weatherDate !== today) { S.weatherDate = today; SAVE.weather = weatherFor(today); }
   if (S.shake > 0) S.shake -= dt;
   tickDinner();
   eventsUpdate(dt);

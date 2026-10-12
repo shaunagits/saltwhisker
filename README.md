@@ -19,13 +19,19 @@ Play it at https://games.shauna.digital/saltwhisker/
 11. **Seagull thief.** Sometimes after a catch a gull lands on the lamp. Tap it within about 3 seconds or it steals the catch, which then does not count (a new entry comes back out of the Tidebook).
 12. **Catch.** A journal card shows the fish. New fish get a "NEW ENTRY" stamp, bigger ones get "NEW BEST".
 
-**Walter's moods.** Short reactions (`mood()`, `MOOD`) move his head, ears, tail and eyes and put a little sign over his head: hearts and two hops for a catch, sparkles and three hops for a new entry, best or golden fish, a head shake and "..." for odds and ends, drooping ears and a tear for an escape, a scribble cloud for a snapped line, an angry vein when a gull steals, "!!" and a jump for the Kraken, "?" on a nibble, "!" on a bite, and he dozes off with "z z" after 30 idle seconds. Drawn in code for now; painted expression heads can replace the eye shapes later.
+**Walking in.** Each visit starts with the pier empty and the rod leaning on the lamp post. After the title card Walter walks out along the deck (`INTRO`, `WALK`), sits down at the end and picks up the rod. A tap skips it; with reduced motion he is simply there.
+
+**Backup code.** The Tidebook lives in the browser's local storage, which phones clear now and then (Safari drops it after a week without a visit). The bottom of the journal has "Copy backup code" and "Paste a code": the whole save as one string (`backupCode`, `readBackup`), so it survives a new phone or a cleared browser. The game can also be added to the home screen (`manifest.json`, `art/icon-*.png`), which keeps the save safe on iPhones.
+
+The basic "hold to cast" and "wait for the dip" hints stop showing after `TUNE.quietAfter` casts; everything else in the panel still appears.
+
+**Walter's moods.** Short reactions (`mood()`, `MOOD`) move his head, ears, tail and eyes and put a little sign over his head: hearts and two hops for a catch, sparkles and three hops for a new entry, best or golden fish, a head shake and "..." for odds and ends, drooping ears and a tear for an escape, a scribble cloud for a snapped line, an angry vein when a gull steals, "!!" and a jump for the Kraken, "?" on a nibble, "!" on a bite, and he dozes off with "z z" after 30 idle seconds. Each mood swaps in one of Shauna's painted expression heads (`FACES`, `FACE_FOR`, `art/cat-face-*.webp`): happy, proud, surprised, unimpressed, sad, grumpy and sleepy, cut with the same head shape as the calm head so the ears and hat line up (`tools/build-faces.py`). The code-drawn eye shapes only stand in while a face is still loading.
 
 **Time and weather.** The clock follows your real local time, and Day 1 is the day you first played. Day, dusk and night each have their own fish. About 30% of calendar days are rainy, and they are the same days for every player (picked from the date, `weatherFor`), which brings out rain-only fish. One "fish of the day" is the same for everyone on a calendar date and is more likely to bite. One fish only appears on real-world Sundays.
 
 ## Code layout
 
-Everything is in `index.html`: canvas plus plain JavaScript, no build step, no dependencies besides Google Fonts. Asset paths must stay relative, because the game is served both at its own domain and under `/saltwhisker` on games.shauna.digital.
+Everything is in `index.html`: canvas plus plain JavaScript, no build step, no outside dependencies. The three fonts are in `fonts/` (Open Font License). `LICENSE.md`: the code is MIT, the art and Walter are all rights reserved. Asset paths must stay relative, because the game is served both at its own domain and under `/saltwhisker` on games.shauna.digital.
 
 Sections inside the script, in order:
 
@@ -44,7 +50,7 @@ There is no test suite. Check changes with a playtest bot: Playwright plus the `
 node tools/playtest-bot.js index.html
 ```
 
-Sound is off until the player taps the speaker button (all synthesized in code, no sound files; `SND` and `SFX`). A title card greets each visit, with tips the first time. Add `?debug` to the URL for a small panel (it also has tentacle, frenzy and gull buttons) to jump the clock, toggle rain, force a bite, or reset the save.
+Screenshots and scripted checks can skip the title card and the walk-in with `__tb.hideTitle()`; `__tb.intro.go()` replays the walk. Sound is off until the player taps the speaker button (all synthesized in code, no sound files; `SND` and `SFX`). A title card greets each visit, with tips the first time. Add `?debug` to the URL for a small panel (it also has tentacle, frenzy and gull buttons) to jump the clock, toggle rain, force a bite, or reset the save.
 
 ## Art
 
@@ -62,7 +68,10 @@ To process a new coast image: `python3 tools/key-magenta.py input.png art/far-na
 - `gull-perched.webp`, `gull-flying.webp` and `gull-flying-down.webp`: the gulls, both facing left (the code flips them). The thief stands on the lamp top in the perched painting (feet at `GULL.feetX` of its width) and arrives and leaves in the flying one; the frenzy gulls use the flying one, smaller. Flying gulls flap by swapping the wings-up and wings-down frames, which share one canvas lined up on the beak (with reduced motion they glide on the wings-up frame). The tiny gull crossing the far sky is still a code stroke. Keyed with `key-magenta.py --sprite`; the perched one is 300 px tall, the flight frames 403 px on their shared canvas.
 - `cat-body.webp`, `cat-head.webp`, `cat-ear-back.webp`, `cat-ear-front.webp`, `cat-tail-1..3.webp`: Walter as a puppet. The head tilts on the neck (looks about, glances at the water, watches the bobber, perks up on a bite, leans in to reel). Ears turn on the head for the nibble and bite cues. The tail bends at two joints in a travelling wave with an occasional flick, stands up and puffs on a bite, lashes while reeling. The body squashes when he crouches, and he blinks. A soft rim light outlines him at night.
 
-To rebuild them from new images: key each one with `python3 tools/key-magenta.py --sprite`, then run `python3 tools/build-painted-art.py work art`. The cut shapes for the ears and tail are at the top of that script. Placement constants (`PIER`, `LAMP`, `BUCKET`, `CATP`) are in `index.html`. Water, the rod, line, bobber and fish shadows are drawn in code in soft shapes to match.
+To rebuild them from new images: key each one with `python3 tools/key-magenta.py --sprite`, then run `python3 tools/build-painted-art.py work art`. The cut shapes for the ears and tail are at the top of that script. Placement constants (`PIER`, `LAMP`, `BUCKET`, `CATP`) are in `index.html`.
+
+- `cat-face-<mood>.webp`: expression heads, built with `python3 tools/build-faces.py <folder with cat-puppet.png and walter-face-*.png> art`. Each face painting is the whole cat with only the face changed; the script lines it up on the body and cuts the same head shape.
+- `walk-body.webp`, `walk-tail.webp`, `walk-leg-*.webp`: Walter walking, from one mid-stride painting, built with `python3 tools/build-walk.py work/walk.png work/cat.png art`. The four legs swing on hip and shoulder pivots (`WALKP`), the tail sways; the painting is one extreme of the stride and the code swings to the other. Layer roots are copied into the body so nothing opens up when a leg turns. Water, the rod, line, bobber and fish shadows are drawn in code in soft shapes to match.
 
 **Fish paintings** live in `art/fish/` as `fish-001-pier-perch.webp` and so on (keyed with `key-magenta.py --sprite`, then resized to 720 px wide). Add each new one to `FISH_ART` in `index.html`; fish without a painting show the dashed placeholder.
 

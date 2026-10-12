@@ -1327,18 +1327,21 @@ function sndFrame(now) {
 document.addEventListener('visibilitychange', () => { if (SND.ctx) document.hidden ? SND.ctx.suspend() : (SAVE.sound && SND.ctx.resume()); });
 
 /* ---------- Gulls: Shauna's paintings (both face left), with the old code drawing as a fallback while they load ---------- */
-const GULL = { perched: loadImg('art/gull-perched.webp'), flying: loadImg('art/gull-flying.webp'), feetX: 0.42 };
+// the two flight frames share one canvas lined up on the beak, so swapping them flaps the wings without moving the body
+const GULL = { perched: loadImg('art/gull-perched.webp'), flying: loadImg('art/gull-flying.webp'), flyingDown: loadImg('art/gull-flying-down.webp'), feetX: 0.42 };
 function drawGull(x, y, flap, s = 1, facing = 1, carrying = false, perched = false, tint = '#ffffff') {
-  const im = perched ? GULL.perched : GULL.flying;
+  // flying: wings down on the downstroke (flap > 0), up otherwise; with reduced motion flap is 0, so it glides
+  const down = !perched && flap > 0.1 && imgReady(GULL.flyingDown);
+  const im = perched ? GULL.perched : down ? GULL.flyingDown : GULL.flying;
   if (imgReady(im)) {
-    // perched: feet stand on (x, y); flying: centred on (x, y), gliding with a slight bob and tilt
+    // perched: feet stand on (x, y); flying: centred on (x, y), with a slight tilt as it flaps
     const w = (perched ? 9 : 12) * s, h = w * im.naturalHeight / im.naturalWidth;
     ctx.save(); ctx.translate(x, y);
-    if (!perched) ctx.rotate(-flap * 0.09 * facing);
-    ctx.scale(-facing, perched ? 1 : 1 - Math.abs(flap) * 0.08);
+    if (!perched) ctx.rotate(-flap * 0.06 * facing);
+    ctx.scale(-facing, 1);
     const ox = perched ? -w * GULL.feetX : -w / 2, oy = perched ? -h : -h / 2;
-    ctx.drawImage(tinted(perched ? 'gull-p' : 'gull-f', im, tint), ox, oy, w, h);
-    if (carrying) { ctx.fillStyle = mulHex('#9fb3c2', tint); ctx.beginPath(); ctx.ellipse(ox + w * 0.06, oy + h * 0.72, w * 0.09, w * 0.03, -0.4, 0, 7); ctx.fill(); }
+    ctx.drawImage(tinted(perched ? 'gull-p' : down ? 'gull-fd' : 'gull-f', im, tint), ox, oy, w, h);
+    if (carrying) { ctx.fillStyle = mulHex('#9fb3c2', tint); ctx.beginPath(); ctx.ellipse(ox + w * 0.06, oy + h * 0.5, w * 0.09, w * 0.03, -0.4, 0, 7); ctx.fill(); }
     ctx.restore();
     return;
   }

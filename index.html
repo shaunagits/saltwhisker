@@ -283,7 +283,7 @@ const FISH = [
 // Shauna's fish and odds-and-ends paintings (art/fish/). Anything without one yet shows the dashed placeholder.
 const FISH_ART = { 1: 'fish-001-pier-perch', 2: 'fish-002-sulky-sardine', 3: 'fish-003-drizzle-darter', 4: 'fish-004-bucket-crab', 5: 'fish-005-gull-snack', 6: 'fish-006-dusky-flounder', 7: 'fish-007-grumble-grouper',
   8: 'fish-008-lamplight-grouper', 9: 'fish-009-longline-tuna', 10: 'fish-010-sock-eel', 11: 'fish-011-lanternfish', 12: 'fish-012-tiny-admiral', 13: 'fish-013-sunday-snapper',
-  14: 'fish-014-old-boot-bass', 15: 'fish-015-the-pier-ghost',
+  14: 'fish-014-old-boot-bass', 15: 'fish-015-the-pier-ghost', 16: 'fish-016-the-kraken',
   101: 'junk-101-message-in-a-bottle', 102: 'junk-102-torn-map', 103: 'junk-103-rubber-duck', 104: 'junk-104-empty-sardine-tin', 105: 'junk-105-single-flip-flop', 106: 'junk-106-sunken-chest' };
 function fishArtEl(f) {
   if (!FISH_ART[f.id]) return null;
@@ -1088,22 +1088,44 @@ function tentaclePath(x, y, h, sway, w, c = 2.4) {
   for (let i = Rr.length - 1; i >= 0; i--) ctx.lineTo(Rr[i][0], Rr[i][1]);
   ctx.closePath(); ctx.fill();
 }
+// Shauna's two painted tentacles. The code-drawn tentaclePath above is the stand-in while they load.
+const TENT = [loadImg('art/kraken-tentacle-1.webp'), loadImg('art/kraken-tentacle-2.webp')];
+// Draw a painted tentacle standing on (x, baseY), h world pixels tall, turned by rot radians around its base.
+function drawTentacleImg(im, x, baseY, h, rot, flip) {
+  const w = h * (im.naturalWidth || im.width) / (im.naturalHeight || im.height);   // works for images and tinted canvases
+  ctx.save(); ctx.translate(x, baseY); ctx.rotate(rot); if (flip) ctx.scale(-1, 1);
+  ctx.drawImage(im, -w / 2, -h, w, h);
+  ctx.restore();
+}
 // Now and then at night, far out, a tentacle rises out of the sea and sinks again. Not catchable. Not explained.
-const CAMEO = { next: 40 + Math.random() * 50, start: -1, x: 150, len: 6 };
+const CAMEO = { next: 40 + Math.random() * 50, start: -1, x: 150, len: 6, pose: 0, flip: false };
 function drawTentacleCameo(P) {
   const now = performance.now() / 1000;
   const night = P.stars > 0.6 && shown;
   if (CAMEO.start < 0) {
     if (now < CAMEO.next) return;
     if (!night || reduceMotion) { CAMEO.next = now + 20; return; }
+    CAMEO.pose = Math.random() < 0.5 ? 0 : 1; CAMEO.flip = Math.random() < 0.5;
     CAMEO.start = now; CAMEO.x = rand(Math.max(OX + 10, 116), Math.min(OX + VW - 10, 196));   // somewhere out at sea that this screen can see CAMEO.len = rand(5.5, 7);
   }
   const t = now - CAMEO.start;
   if (t > CAMEO.len) { CAMEO.start = -1; CAMEO.next = now + rand(70, 160); return; }
   const up = Math.min(1, t / 1.6, (CAMEO.len - t) / 1.6);
   const e = up * up * (3 - 2 * up);
-  ctx.globalAlpha = 0.8; ctx.fillStyle = mixHex(P.seaDeeper, '#05070f', 0.45);
-  tentaclePath(CAMEO.x, 97.2, 9 * e, t * 1.4, 1.7);
+  const im = TENT[CAMEO.pose];
+  if (imgReady(im)) {
+    // painted tentacle, rising out of the water: only the part above the surface shows
+    const H = 11, sway = Math.sin(t * 1.3) * 0.12;
+    ctx.save(); ctx.beginPath(); ctx.rect(-300, -300, 800, 397.4); ctx.clip();
+    ctx.imageSmoothingEnabled = true;
+    const tint = tinted('tent' + CAMEO.pose, im, sceneTint(P));
+    ctx.globalAlpha = 0.95; drawTentacleImg(tint, CAMEO.x, 97.4 + H * (1 - e), H, sway, CAMEO.flip);
+    ctx.globalAlpha = 0.35; drawTentacleImg(silhouette('tentfog' + CAMEO.pose, im, P.seaDeeper), CAMEO.x, 97.4 + H * (1 - e), H, sway, CAMEO.flip);   // distance haze
+    ctx.restore();
+  } else {
+    ctx.globalAlpha = 0.8; ctx.fillStyle = mixHex(P.seaDeeper, '#05070f', 0.45);
+    tentaclePath(CAMEO.x, 97.2, 9 * e, t * 1.4, 1.7);
+  }
   ctx.globalAlpha = 0.5 * e; ctx.strokeStyle = P.wave; ctx.lineWidth = 0.3;
   ctx.beginPath(); ctx.ellipse(CAMEO.x, 97.4, 2 + e * 1.5, 0.35, 0, 0, 7); ctx.stroke();
   ctx.globalAlpha = 1;
@@ -1117,9 +1139,12 @@ function drawKrakenShadow(P) {
   ctx.globalAlpha = 0.34 * grow;
   ctx.beginPath(); ctx.ellipse(cx, cy + 2, 18 * grow + 6, 6 * grow + 2, 0, 0, 7); ctx.fill();
   ctx.globalAlpha = 0.42 * grow;
+  ctx.imageSmoothingEnabled = true;
   for (let i = 0; i < 5; i++) {
     const bx = cx - 14 + i * 7, sway = still ? i : now * 1.6 + i * 1.3;
-    tentaclePath(bx, cy, 11 * grow + 3, sway, 2.6, (i % 2 ? -1 : 1) * (3.6 + Math.sin(sway) * 0.6));
+    const im = TENT[i % 2];
+    if (imgReady(im)) drawTentacleImg(silhouette('tentshadow' + (i % 2), im, '#02040a'), bx, cy + 1, 12 * grow + 4, Math.sin(sway) * 0.22 + (i - 2) * 0.12, i % 2 === 0);
+    else tentaclePath(bx, cy, 11 * grow + 3, sway, 2.6, (i % 2 ? -1 : 1) * (3.6 + Math.sin(sway) * 0.6));
   }
   ctx.globalAlpha = 1;
 }

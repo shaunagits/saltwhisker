@@ -13,7 +13,10 @@ Play it at https://games.shauna.digital/saltwhisker/
 5. **Golden fish.** About 1 in 20 bites is a golden version, given away by a gold shimmer in the water. Golden catches get a star in the journal.
 6. **Odds and ends.** Not everything is a fish: a message in a bottle (its note tips you off about a fish you have not caught), four torn map pieces (all four reveal a sunken chest far out, whose lucky coin doubles golden fish), a rubber duck, an empty sardine tin and a single flip-flop. They sit in the journal after the fish with an Odds and Ends tag and are counted separately.
 7. **The Kraken.** A legendary that bites only at night with a long cast. The fight comes in three rounds, one per tentacle (heavy, then wriggling, then lunging), each stronger than the last. A huge shape rises under the bobber and Walter's tail stays puffed the whole time. Now and then at night one of Shauna's painted tentacles (`art/kraken-tentacle-1.webp`, `-2.webp`) rises far out at sea and sinks again (`CAMEO`); the same two paintings, as dark silhouettes, ring the shape under the bobber during the fight, and the bottle sometimes hints at him. `?debug` has a tentacle button.
-8. **Catch.** A journal card shows the fish. New fish get a "NEW ENTRY" stamp, bigger ones get "NEW BEST".
+8. **Jumping fish.** Strong fish leap mid-fight. Tap as they jump to set the hook (they lose line); miss and they gain a little.
+9. **Feeding frenzy.** Every few minutes in daylight, gulls dive over one spot for 30 seconds. Cast near them for quick bites.
+10. **Seagull thief.** Sometimes after a catch a gull lands on the lamp. Tap it within about 3 seconds or it steals that catch's dinner points.
+11. **Catch.** A journal card shows the fish. New fish get a "NEW ENTRY" stamp, bigger ones get "NEW BEST".
 
 **Dinner.** Each day, Walter needs 4 dinner points before 8 PM. Bigger fish are worth more (1 to 3 points). Some fish he refuses to eat (the crab, anything wearing a hat, the legendaries). Fish caught after 8 PM are snacks. Make dinner every evening to build a streak.
 
@@ -40,7 +43,7 @@ There is no test suite. Check changes with a playtest bot: Playwright plus the `
 node tools/playtest-bot.js index.html
 ```
 
-Add `?debug` to the URL for a small panel to jump the clock, toggle rain, force a bite, or reset the save.
+Sound is off until the player taps the speaker button (all synthesized in code, no sound files; `SND` and `SFX`). A title card greets each visit, with tips the first time. Add `?debug` to the URL for a small panel (it also has tentacle, frenzy and gull buttons) to jump the clock, toggle rain, force a bite, or reset the save.
 
 ## Art
 

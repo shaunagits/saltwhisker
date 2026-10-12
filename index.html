@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://games.shauna.digital/saltwhisker/og.jpg">
 <meta name="theme-color" content="#1d3b52">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%231d3b52'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%23f3ead8'/%3E%3Crect x='7' y='3' width='2' height='10' fill='%232b2a33'/%3E%3Crect x='4' y='6' width='2' height='1' fill='%23b5453a'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2032%2032%27%3E%3Crect%20width%3D%2732%27%20height%3D%2732%27%20rx%3D%278%27%20fill%3D%27%231d3b52%27/%3E%3Cpath%20d%3D%27M7%2018a9%209%200%200%201%2018%200z%27%20fill%3D%27%23d8433a%27/%3E%3Cpath%20d%3D%27M7%2018a9%209%200%200%200%2018%200z%27%20fill%3D%27%23f4f1ea%27/%3E%3Crect%20x%3D%2715%27%20y%3D%274%27%20width%3D%272%27%20height%3D%276%27%20rx%3D%271%27%20fill%3D%27%23f4f1ea%27/%3E%3C/svg%3E">
 <link rel="preload" as="image" href="art/pier.webp">
 <link rel="preload" as="image" href="art/sky-day.webp">
 <link rel="preload" as="image" href="art/sky-night.webp">
@@ -38,6 +38,14 @@ body {
 }
 canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 0.6s ease; }
 canvas.ready { opacity: 1; }
+.title { position: fixed; inset: 0; z-index: 4; display: flex; align-items: flex-end; justify-content: center; padding: 0 16px max(28px, env(safe-area-inset-bottom)); box-sizing: border-box;
+  background: linear-gradient(180deg, rgba(8, 12, 32, 0) 35%, rgba(8, 12, 32, 0.55) 100%); pointer-events: auto; }
+.titlecard { width: min(100%, 360px); background: rgba(250, 244, 230, 0.95); border: 1.5px solid var(--edge); border-radius: 22px; box-shadow: 0 14px 34px rgba(0, 0, 0, 0.3);
+  padding: 22px 20px 20px; display: flex; flex-direction: column; gap: 10px; text-align: center; animation: cardpop 0.45s ease-out; }
+.tname { margin: 0; font-size: 40px; font-weight: 800; color: var(--deep); line-height: 1; }
+.tsub { margin: 0; font-family: 'Kalam', cursive; font-size: 20px; color: #3d3a40; }
+.ttips { margin: 2px 0 4px; padding: 0; list-style: none; font-family: 'Kalam', cursive; font-size: 17px; color: var(--muted); display: flex; flex-direction: column; gap: 2px; }
+@media (prefers-reduced-motion: reduce) { .titlecard { animation: none; } }
 .loading { position: fixed; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
   background: linear-gradient(180deg, #1d3b52 0%, #0b1030 100%); transition: opacity 0.5s ease; }
 .loading.done { opacity: 0; pointer-events: none; }
@@ -63,6 +71,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .chip .small { font-family: inherit; font-style: italic; font-weight: 500; font-size: 15px; color: var(--muted); }
 .chip svg { flex-shrink: 0; }
 .topleft { display: flex; gap: 10px; align-items: center; min-width: 0; }
+.topright { display: flex; gap: 10px; align-items: center; }
 .iconbtn {
   width: 42px; height: 42px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; padding: 0;
   border-radius: 50%; border: 1px solid rgba(43, 42, 51, 0.16); background: rgba(250, 244, 230, 0.82); color: var(--ink);
@@ -178,6 +187,18 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   <p class="loadmsg" id="loadMsg">Walter is putting on his hat...</p>
   <div class="loadbar" aria-hidden="true"><div class="loadfill" id="loadFill"></div></div>
 </div>
+<div class="title" id="title" hidden>
+  <div class="titlecard">
+    <h1 class="tname">Saltwhisker</h1>
+    <p class="tsub">Help Walter catch dinner by 8 PM.</p>
+    <ul class="ttips" id="titleTips" hidden>
+      <li>Hold to wind up. Let go to cast.</li>
+      <li>When the bobber dips, tap.</li>
+      <li>Hold to reel. Keep the marker in the green.</li>
+    </ul>
+    <button class="btn primary" id="startBtn">CAST OFF</button>
+  </div>
+</div>
 <canvas id="game" aria-label="Walter, a tuxedo cat, fishing off the end of a pier" role="img"></canvas>
 
 <div class="hud">
@@ -189,10 +210,15 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     </a>
     <div class="clock" id="clock"><span id="clockIcon"></span><span id="clockText">DAY 1 · 2:00 PM</span></div>
     </div>
+    <div class="topright">
+    <button class="iconbtn" id="soundBtn" aria-label="Sound is off. Turn sound on" aria-pressed="false">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><g id="soundWaves" hidden><path d="M15.5 9a4 4 0 0 1 0 6"/><path d="M18 6.5a7.5 7.5 0 0 1 0 11"/></g><g id="soundX"><path d="M16 9.5l5 5M21 9.5l-5 5"/></g></svg>
+    </button>
     <button class="iconbtn" id="journalBtn" aria-label="Open journal">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.5C9.5 5 6 4.6 3 5.3v13c3-.7 6.5-.3 9 1.2 2.5-1.5 6-1.9 9-1.2v-13c-3-.7-6.5-.3-9 1.2z"/><path d="M12 6.5v13"/></svg>
       <span id="foundCount" hidden>0/15</span>
     </button>
+    </div>
   </div>
   <div class="chip dinner" id="dinnerChip" hidden><span id="dinnerLabel">DINNER</span><span class="pips" id="dinnerPips"></span><span class="small" id="dinnerRight">by 8 PM</span></div>
   </div>
@@ -464,9 +490,13 @@ function pickFish() {
 }
 
 /* ---------- Input ---------- */
-function press() {
+function press(wx, wy) {
   if (S.holding) return;
+  if (SAVE.sound) sndInit();
+  // a tap on the perched gull (or Space while it sits there) shoos it instead of casting
+  if (THIEF.phase === 'perched' && (wx === undefined || Math.hypot(wx - THIEF.x, wy - THIEF.y) < 11)) { shooGull(); return; }
   S.holding = true;
+  if (S.state === 'reeling' && S.jump) S.jump.hit = true;
   switch (S.state) {
     case 'idle': case 'message':
       setState('charging'); S.power = 0; break;
@@ -483,13 +513,13 @@ function release() {
   S.holding = false;
   if (S.state === 'charging') cast();
 }
-function isUiTarget(e) { return e.target.closest && e.target.closest('a, button, .overlay, .journal, .debug'); }
-window.addEventListener('pointerdown', e => { if (isUiTarget(e)) return; e.preventDefault(); press(); });
+function isUiTarget(e) { return e.target.closest && e.target.closest('a, button, .overlay, .journal, .debug, .title'); }
+window.addEventListener('pointerdown', e => { if (isUiTarget(e)) return; e.preventDefault(); press(e.clientX / SC + OX, e.clientY / SC + OY); });
 window.addEventListener('pointerup', release);
 window.addEventListener('pointercancel', release);
 window.addEventListener('keydown', e => {
   if (e.code !== 'Space' || e.repeat) return;
-  if (!document.getElementById('journal').hidden || !document.getElementById('catchOverlay').hidden) return;
+  if (!document.getElementById('journal').hidden || !document.getElementById('catchOverlay').hidden || !document.getElementById('title').hidden) return;
   e.preventDefault(); press();
 });
 window.addEventListener('keyup', e => { if (e.code === 'Space') release(); });
@@ -506,7 +536,7 @@ function cast() {
   const [a, b] = castRange();
   S.bob.tx = lerp(a, b, p);
   S.bob.sx = TIP.x; S.bob.sy = TIP.y + 4;
-  setState('flying');
+  setState('flying'); SFX.cast();
 }
 function startWaiting() {
   setState('waiting');
@@ -519,6 +549,7 @@ function startWaiting() {
   S.lastNibble = -9;
   S.fish = pickFish();
   leapImg(S.fish);
+  if (frenzyOn(performance.now() / 1000) && Math.abs(S.bob.x - FRENZY.x) < 14) { S.waitAt = rand(0.7, 1.6); S.nibbles = []; }
   S.gold = !S.fish.junk && S.fish.fight !== 'kraken' && Math.random() < goldChance();
   const fromLeft = Math.random() < 0.5;
   const sz = clamp(S.fish.size[1] / 10, 4, 14);
@@ -533,6 +564,7 @@ function hook() {
   S.surgeIn = rand(TUNE.surgeEvery[0], TUNE.surgeEvery[1]); S.surgeLeft = 0;
   S.reelFrom = S.bob.x;
   S.fight = { t: 0, at: rand(0.4, 0.6) }; S.fightMsg = ''; S.ghostOut = false;
+  S.jump = null; S.nextJump = rand(2.5, 4.5);
 }
 // One step of the fish's fight. Returns how it changes the pull this frame.
 // The green part of the tension bar: narrower for rarer fish, drifting for wrigglers.
@@ -636,6 +668,7 @@ function landFish() {
   const r2 = SAVE.found[f.id], newGold = gold && !r2.gold;
   if (gold) r2.gold = (r2.gold || 0) + 1;
   let dinnerNote = '';
+  S.lastPts = 0;
   const D = SAVE.dinner;
   if (f.junk) dinnerNote = 'Not food';
   else if (f.fight === 'kraken') dinnerNote = 'Too big for the bucket';
@@ -644,13 +677,17 @@ function landFish() {
   else if (D.done) dinnerNote = 'Extra helping';
   else {
     const pts = dinnerPoints(size);
+    const before = D.pts;
     D.pts = Math.min(TUNE.dinnerGoal, D.pts + pts);
+    S.lastPts = D.pts - before; S.lastMadeDinner = false;
     dinnerNote = '+' + pts + ' dinner';
-    if (D.pts >= TUNE.dinnerGoal) { D.done = true; SAVE.streak++; SAVE.best = Math.max(SAVE.best, SAVE.streak); dinnerNote = 'Dinner served!'; }
+    if (D.pts >= TUNE.dinnerGoal) { D.done = true; SAVE.streak++; SAVE.best = Math.max(SAVE.best, SAVE.streak); dinnerNote = 'Dinner served!'; S.lastMadeDinner = true; setTimeout(SFX.purr, 1800); }
   }
   persist();
   S.catches++;
   // the fish leaps out of the water and dangles from the rod for a moment, then the card comes up
+  if (f.junk || f.refuse || !dinnerOpen(SAVE.gm)) S.lastPts = 0;
+  (f.junk || f.refuse) ? SFX.meh() : SFX.chime();
   S.pending = [f, size, isNew, isRecord && !f.junk, dinnerNote, gold, newGold, junkNote];
   S.landMsg = f.fight === 'kraken' ? 'THE KRAKEN! He is... waving?' : f.junk ? 'Oh. ' + (/^[aeiou]/i.test(f.name) ? 'An ' : 'A ') + f.name.toLowerCase() + '.'
     : gold ? 'A golden ' + f.name + '!' : f.refuse ? 'Got... a ' + f.name + '. Hmm.' : 'Got it! ' + f.name + '!';
@@ -661,7 +698,7 @@ function landFish() {
   updateFound();
 }
 function lose(text, snap) {
-  if (snap) { S.snaps++; S.shake = reduceMotion ? 0 : 0.35; } else S.escapes++;
+  if (snap) { S.snaps++; S.shake = reduceMotion ? 0 : 0.35; SFX.snap(); } else S.escapes++;
   say(text, 1.8);
 }
 
@@ -702,6 +739,7 @@ function update(dt) {
   }
   if (S.shake > 0) S.shake -= dt;
   tickDinner();
+  eventsUpdate(dt);
 
   switch (S.state) {
     case 'charging': {
@@ -724,7 +762,7 @@ function update(dt) {
         sh.cx = lerp(sh.x, S.bob.x - sh.w / 2, k);
       }
       for (const n of S.nibbles) if (S.t >= n && S.t - dt < n) S.lastNibble = S.t;
-      if (S.t >= S.waitAt) { setState('bite'); splash(S.bob.x, 102, 4); }
+      if (S.t >= S.waitAt) { setState('bite'); splash(S.bob.x, 102, 3); SFX.plop(); }
       break;
     }
     case 'bite':
@@ -776,6 +814,7 @@ function update(dt) {
   } else S.rain.length = 0;
 }
 function splash(x, y, n) {
+  if (n >= 4) SFX.splash(n);
   for (let i = 0; i < n; i++) S.splashes.push({ x, y, vx: rand(-14, 14), vy: rand(-40, -15), t: 0 });
 }
 
@@ -882,11 +921,13 @@ function drawFar(P) {
   ctx.globalAlpha = 1;
   ctx.imageSmoothingEnabled = false;
   // lighthouse light switches on at dusk and pulses at night
+  LH.on = 0;
   if (P.glow > 0.05) {
     let lx = FAR_RECT.x + FAR_RECT.lamp[0] * k0, ly = y + FAR_RECT.lamp[1] * k0;
     if (nightReady) { lx = lerp(lx, nlx, toNight); ly = lerp(ly, nly, toNight); }
     const pulse = reduceMotion ? 1 : 0.6 + 0.4 * Math.abs(Math.sin(performance.now() / 900));
     const a = clamp(P.glow * 5, 0, 1) * pulse;
+    LH.x = lx; LH.on = a;
     softGlow(lx, ly, 7, '255,217,122', a * 0.7);
     ctx.globalAlpha = a; ctx.fillStyle = '#ffe9b0'; ctx.beginPath(); ctx.arc(lx, ly, 0.9, 0, 7); ctx.fill();
     ctx.globalAlpha = 1;
@@ -946,11 +987,13 @@ CATP.y = 86 - CATP.feet * CATP.k;
 function lampGlass() { const k = LAMP.h / ART.lamp.naturalHeight; return [LAMP.x + LAMP.glass[0] * k, 86 - LAMP.h + LAMP.glass[1] * k]; }
 
 const TINTS = {};
+function quantHex(h) { return '#' + hexToRgb(h).map(v => Math.min(255, Math.round(v / 10) * 10).toString(16).padStart(2, '0')).join(''); }
 function tinted(key, im, col) {
+  col = quantHex(col);
   if (col === '#ffffff') return im;
   let c = TINTS[key];
   const now = performance.now();
-  if (c && (c.col === col || now - c.at < 250)) return c.cv;
+  if (c && (c.col === col || now - c.at < 500)) return c.cv;
   if (!c) { c = TINTS[key] = { cv: document.createElement('canvas') }; c.cv.width = im.naturalWidth; c.cv.height = im.naturalHeight; }
   const x = c.cv.getContext('2d'), w = c.cv.width, h = c.cv.height;
   x.globalCompositeOperation = 'copy'; x.drawImage(im, 0, 0);
@@ -1031,6 +1074,7 @@ function drawPaintedCat(P) {
   if (S.state === 'bite') headT = -4 + (still ? 0 : Math.sin(now * 40) * 1.2);
   if (S.state === 'reeling') headT = 6 + (S.surgeLeft > 0 && !still ? Math.sin(now * 35) * 1.5 : 0);
   if (S.state === 'caught') headT = -6;
+  if (THIEF.phase === 'perched' || THIEF.phase === 'arriving') headT = -9;
   if (S.state === 'landing') headT = S.fish && (S.fish.junk || S.fish.refuse) ? 5 : -7;
   A.head = still ? headT : easeTo(A.head, headT, S.state === 'bite' ? 18 : 6, dt);
 
@@ -1178,6 +1222,208 @@ function drawKrakenShadow(P) {
   ctx.globalAlpha = 1;
 }
 
+/* ---------- Sound (off until the player turns it on) ---------- */
+// Everything is synthesized here, no sound files. SAVE.sound remembers the choice.
+const SND = { ctx: null, master: null, waves: null, tickAt: 0 };
+function sndOn() { return !!SAVE.sound && !!SND.ctx; }
+function sndInit() {
+  if (SND.ctx) { if (SND.ctx.state === 'suspended') SND.ctx.resume(); return; }
+  const C = window.AudioContext || window.webkitAudioContext; if (!C) return;
+  const ac = SND.ctx = new C();
+  SND.master = ac.createGain(); SND.master.gain.value = 0.55; SND.master.connect(ac.destination);
+  SND.noise = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
+  const d = SND.noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  // the sea: looping noise through a low filter, its volume swelling slowly in sndFrame
+  const src = ac.createBufferSource(); src.buffer = SND.noise; src.loop = true;
+  const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 420;
+  SND.waves = ac.createGain(); SND.waves.gain.value = 0;
+  src.connect(lp).connect(SND.waves).connect(SND.master); src.start();
+}
+function noiseHit(dur, freq, type, gain, q = 0.8, sweepTo) {
+  if (!sndOn()) return;
+  const ac = SND.ctx, t = ac.currentTime, src = ac.createBufferSource(); src.buffer = SND.noise;
+  const f = ac.createBiquadFilter(); f.type = type; f.frequency.setValueAtTime(freq, t); f.Q.value = q;
+  if (sweepTo) f.frequency.exponentialRampToValueAtTime(sweepTo, t + dur);
+  const g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.015); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  src.connect(f).connect(g).connect(SND.master); src.start(t, Math.random()); src.stop(t + dur + 0.05);
+}
+function tone(freq, dur, gain, type = 'sine', toFreq, delay = 0) {
+  if (!sndOn()) return;
+  const ac = SND.ctx, t = ac.currentTime + delay, o = ac.createOscillator(); o.type = type;
+  o.frequency.setValueAtTime(freq, t); if (toFreq) o.frequency.exponentialRampToValueAtTime(toFreq, t + dur);
+  const g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(SND.master); o.start(t); o.stop(t + dur + 0.05);
+}
+const SFX = {
+  cast:   () => noiseHit(0.35, 500, 'bandpass', 0.18, 1.2, 1800),
+  splash: n => noiseHit(n >= 8 ? 0.5 : 0.28, n >= 8 ? 700 : 1100, 'bandpass', n >= 8 ? 0.35 : 0.16, 0.7),
+  plop:   () => tone(260, 0.14, 0.25, 'sine', 120),
+  tick:   () => noiseHit(0.025, 3200, 'highpass', 0.05),
+  chime:  () => { tone(659, 0.5, 0.12, 'triangle'); tone(988, 0.6, 0.1, 'triangle', null, 0.12); },
+  meh:    () => tone(196, 0.3, 0.12, 'triangle', 150),
+  snap:   () => { noiseHit(0.18, 2500, 'highpass', 0.3); tone(400, 0.25, 0.12, 'sawtooth', 90); },
+  purr:   () => { if (!sndOn()) return; const ac = SND.ctx, t = ac.currentTime, o = ac.createOscillator(), lfo = ac.createOscillator(), lg = ac.createGain(), g = ac.createGain(), f = ac.createBiquadFilter();
+    o.type = 'sawtooth'; o.frequency.value = 48; lfo.frequency.value = 24; lg.gain.value = 0.08; f.type = 'lowpass'; f.frequency.value = 260;
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.1, t + 0.2); g.gain.linearRampToValueAtTime(0.0001, t + 1.4);
+    lfo.connect(lg).connect(g.gain); o.connect(f).connect(g).connect(SND.master); o.start(t); lfo.start(t); o.stop(t + 1.5); lfo.stop(t + 1.5); },
+  gull:   () => { tone(1100, 0.16, 0.06, 'sawtooth', 700); tone(1000, 0.2, 0.05, 'sawtooth', 620, 0.2); },
+  hookset:() => tone(523, 0.18, 0.12, 'triangle', 784),
+};
+function sndFrame(now) {
+  if (!SND.waves) return;
+  const target = sndOn() ? 0.07 + 0.04 * Math.sin(now / 2600) : 0;
+  SND.waves.gain.setTargetAtTime(target, SND.ctx.currentTime, 0.4);
+  // reel clicks while reeling in
+  if (S.state === 'reeling' && S.holding && now - SND.tickAt > 75) { SND.tickAt = now; SFX.tick(); }
+}
+document.addEventListener('visibilitychange', () => { if (SND.ctx) document.hidden ? SND.ctx.suspend() : (SAVE.sound && SND.ctx.resume()); });
+
+/* ---------- Gulls (drawn in code) ---------- */
+function drawGull(x, y, flap, s = 1, facing = 1, carrying = false) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(facing * s, s);
+  ctx.fillStyle = '#f4f1ea'; ctx.beginPath(); ctx.ellipse(0, 0, 2.2, 0.9, 0, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(1.9, -0.5, 0.7, 0, 7); ctx.fill();
+  ctx.fillStyle = '#f2a33a'; ctx.beginPath(); ctx.moveTo(2.5, -0.5); ctx.lineTo(3.4, -0.3); ctx.lineTo(2.5, -0.15); ctx.fill();
+  ctx.fillStyle = '#2b2a33'; ctx.beginPath(); ctx.arc(2.05, -0.65, 0.12, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#9aa1ad'; ctx.lineWidth = 0.55; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-0.4, -0.3); ctx.quadraticCurveTo(-1.6, -1.6 - flap * 1.6, -3.4, -0.6 - flap * 2.2); ctx.stroke();
+  ctx.strokeStyle = '#b8bec8'; ctx.beginPath(); ctx.moveTo(0.4, -0.3); ctx.quadraticCurveTo(-0.4, -2 - flap * 1.6, -1.6, -1.6 - flap * 2.4); ctx.stroke();
+  if (carrying) { ctx.fillStyle = '#9fb3c2'; ctx.beginPath(); ctx.ellipse(1.2, 1.3, 1.4, 0.45, 0.3, 0, 7); ctx.fill(); }
+  ctx.restore();
+}
+
+/* ---------- Feeding frenzy: gulls dive over one spot, and fish bite fast there ---------- */
+const FRENZY = { next: 70 + Math.random() * 60, until: 0, x: 150 };
+function frenzyOn(now) { return now < FRENZY.until; }
+function drawFrenzy(P, now) {
+  if (!frenzyOn(now)) return;
+  const fade = Math.min(1, (FRENZY.until - now) / 2, (now - (FRENZY.until - 30)) / 1.5);
+  ctx.globalAlpha = clamp(fade, 0, 1);
+  for (let i = 0; i < 3; i++) {
+    const cyc = (now * 0.35 + i / 3) % 1;                      // each gull circles, then dives
+    const dive = reduceMotion ? 0 : (cyc > 0.82 ? Math.sin((cyc - 0.82) / 0.18 * Math.PI) : 0);
+    const a = now * 0.9 + i * 2.1;
+    const x = FRENZY.x + Math.cos(a) * 9, y = lerp(76 + Math.sin(a) * 3, 96, dive);
+    drawGull(x, y, reduceMotion ? 0.3 : Math.sin(now * 9 + i) * 0.5, 0.9, Math.sin(a) > 0 ? -1 : 1);
+    if (dive > 0.95 && Math.random() < 0.3) splash(x, 97, 2);
+  }
+  // little fish flicking at the surface
+  if (!reduceMotion && Math.random() < 0.08) splash(FRENZY.x + rand(-8, 8), 97, 2);
+  ctx.globalAlpha = 1;
+}
+
+/* ---------- Seagull thief: lands on the lamp after a catch, steals the dinner points unless shooed ---------- */
+const THIEF = { phase: 'none', t: 0, pts: 0, made: false, x: 0, y: 0 };
+const PERCH = () => { const [gx] = lampGlass(); return [gx, 86 - LAMP.h - 0.8]; };
+function maybeThief() {
+  const P = paletteAt(hourOf(SAVE.gm));
+  if (!S.lastPts || !dinnerOpen(SAVE.gm) || P.gull < 0.5 || SAVE.weather === 'rain' || !sceneReady()) return;
+  if (Math.random() > 0.3) return;
+  Object.assign(THIEF, { phase: 'arriving', t: 0, pts: S.lastPts, made: S.lastMadeDinner, x: OX + VW + 10, y: 40 });
+  S.lastPts = 0; SFX.gull();
+}
+function shooGull() { THIEF.phase = 'leaving'; THIEF.t = 0; THIEF.stole = false; SFX.gull(); flash('Shoo! Walter keeps his dinner.', 1.8); }
+function thiefUpdate(dt) {
+  if (THIEF.phase === 'none') return;
+  THIEF.t += dt;
+  const [px, py] = PERCH();
+  if (THIEF.phase === 'arriving') {
+    const k = Math.min(1, THIEF.t / 1.3), e = 1 - (1 - k) ** 2;
+    THIEF.x = lerp(OX + VW + 10, px, e); THIEF.y = lerp(40, py, e) - Math.sin(k * Math.PI) * 6;
+    if (k >= 1) { THIEF.phase = 'perched'; THIEF.t = 0; }
+  } else if (THIEF.phase === 'perched') {
+    THIEF.x = px; THIEF.y = py;
+    if (THIEF.t > 2.8) {   // too slow: it takes the fish
+      const D = SAVE.dinner;
+      if (THIEF.made && D.done) { D.done = false; SAVE.streak = Math.max(0, SAVE.streak - 1); }
+      D.pts = Math.max(0, D.pts - THIEF.pts); persist();
+      THIEF.phase = 'leaving'; THIEF.t = 0; THIEF.stole = true; SFX.gull();
+      flash('The gull stole it! -' + THIEF.pts + ' dinner.', 2.2);
+    }
+  } else if (THIEF.phase === 'leaving') {
+    THIEF.x = px - THIEF.t * 40; THIEF.y = py - THIEF.t * 22;
+    if (THIEF.t > 2) THIEF.phase = 'none';
+  }
+}
+function drawThief(P, now) {
+  if (THIEF.phase === 'none') return;
+  const perched = THIEF.phase === 'perched';
+  const flap = perched ? 0 : (reduceMotion ? 0.3 : Math.sin(now * 12) * 0.6);
+  const hop = perched && !reduceMotion ? Math.abs(Math.sin(now * 5)) * 0.25 : 0;
+  ctx.save(); ctx.globalAlpha = 1;
+  if (perched) { const pulse = 0.35 + 0.25 * Math.sin(now * 6); softGlow(THIEF.x, THIEF.y, 5, '255,240,200', reduceMotion ? 0.35 : pulse); }
+  drawGull(THIEF.x, THIEF.y - hop, flap, 1.15, THIEF.phase === 'leaving' ? -1 : (perched ? 1 : -1), THIEF.phase === 'leaving' && THIEF.stole);
+  ctx.restore();
+}
+
+/* ---------- Jumping fish: strong fish leap mid-fight; tap as they jump to set the hook ---------- */
+function jumpEligible(f) { return f && !f.junk && f.fight !== 'kraken' && f.fight !== 'ghost' && f.str >= 0.4; }
+function jumpUpdate(dt) {
+  if (S.state !== 'reeling' || !jumpEligible(S.fish)) { S.jump = null; return; }
+  if (!S.jump) {
+    if (S.t > S.nextJump) { S.jump = { t: 0, hit: false }; splash(S.bob.x, 102, 6); SFX.splash(6); }
+    return;
+  }
+  S.jump.t += dt;
+  if (S.jump.t > 0.8) {
+    if (S.jump.hit) { S.dist = Math.max(0.5, S.dist - S.startDist * 0.12); flash('Hook set!', 1.1); SFX.hookset(); }
+    else { S.dist = Math.min(S.startDist * 1.25, S.dist + S.startDist * 0.15); flash('It shook loose a little. Tap when it jumps!', 1.6); }
+    splash(S.bob.x, 102, 5); SFX.splash(5);
+    S.jump = null; S.nextJump = S.t + rand(4, 7);
+  }
+}
+function drawJump(P) {
+  if (!S.jump) return;
+  const f = S.fish, k = clamp(S.jump.t / 0.8, 0, 1), im = leapImg(f);
+  const len = clamp(f.size[1] / 6, 8, 15), y = 101 - Math.sin(k * Math.PI) * 10;
+  ctx.save(); ctx.translate(S.bob.x, y); ctx.rotate(-0.8 + k * 1.6);
+  if (im && imgReady(im)) { const h = len * im.naturalHeight / im.naturalWidth; ctx.drawImage(tinted('leap' + f.id, im, sceneTint(P)), -len / 2, -h / 2, len, h); }
+  else { ctx.fillStyle = '#3d4a5c'; ctx.beginPath(); ctx.ellipse(0, 0, len / 2, len / 6, 0, 0, 7); ctx.fill(); }
+  ctx.restore();
+}
+
+/* ---------- Light on the water at night: moon, lamp and lighthouse ---------- */
+const LH = { x: 0, on: 0 };
+function drawReflections(P, now) {
+  const items = [];
+  const night = nightSkyAmount(P);
+  if (night > 0.05 && SAVE.weather !== 'rain') items.push([SKY_RECT.x + 0.66 * SKY_RECT.w, '#f6e7b8', night * 0.45, 3.4]);
+  const lamp = clamp(P.glow / 0.2, 0, 1);
+  if (lamp > 0.05 && sceneReady()) items.push([lampGlass()[0], '#ffcf6b', lamp * 0.5, 1.8]);
+  if (LH.on > 0.05) items.push([LH.x, '#ffd97a', LH.on * 0.45, 1.3]);
+  ctx.lineCap = 'round';
+  for (const [cx, col, a, w] of items) {
+    ctx.strokeStyle = col;
+    for (let i = 0; i < 11; i++) {
+      const y = 97.5 + i * 1.6 + i * i * 0.05;
+      const len = w * (1 - i / 13) * (reduceMotion ? 0.8 : 0.55 + 0.45 * Math.sin(now * 1.7 + i * 1.9));
+      const x = cx + (reduceMotion ? 0 : Math.sin(now * 1.1 + i * 2.3) * 0.7 * (1 + i * 0.12));
+      ctx.globalAlpha = a * (1 - i / 11); ctx.lineWidth = 0.45;
+      ctx.beginPath(); ctx.moveTo(x - len, y); ctx.lineTo(x + len, y); ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+/* ---------- Short messages over the panel ---------- */
+function flash(text, secs) { S.flashText = text; S.flashUntil = performance.now() / 1000 + secs; }
+function flashMsg() { return S.flashText && performance.now() / 1000 < S.flashUntil ? S.flashText : ''; }
+
+/* ---------- Event clock ---------- */
+function eventsUpdate(dt) {
+  const now = performance.now() / 1000;
+  jumpUpdate(dt);
+  thiefUpdate(dt);
+  if (!frenzyOn(now) && now > FRENZY.next && shown) {
+    const P = paletteAt(hourOf(SAVE.gm));
+    if (P.gull > 0.5 && SAVE.weather !== 'rain') {
+      FRENZY.x = rand(Math.max(OX + 22, 118), Math.min(OX + VW - 16, 182)); FRENZY.until = now + 30;
+      flash('Gulls are diving out there. Fish are biting!', 3); SFX.gull();
+    }
+    FRENZY.next = now + 30 + rand(150, 300);
+  }
+}
+
 /* ---------- Landing a catch ---------- */
 const LEAP_IMG = {};
 function leapImg(f) {
@@ -1309,7 +1555,11 @@ function draw() {
     ctx.beginPath(); ctx.moveTo(x0, y); ctx.quadraticCurveTo(x0 + w / 2, y - 0.7, x0 + w, y); ctx.stroke();
   });
   ctx.globalAlpha = 1;
+  const tnow = performance.now() / 1000;
+  drawReflections(P, tnow);
   drawTentacleCameo(P);
+  drawFrenzy(P, tnow);
+  drawJump(P);
   // ambient fish shadows in deep water
   ctx.globalAlpha = P.shadow; ctx.fillStyle = '#000';
   const amb = (performance.now() / 1000) * (reduceMotion ? 0 : 3);
@@ -1321,7 +1571,7 @@ function draw() {
   if (krak) drawKrakenShadow(P);
   // hooked/approaching fish shadow
   const sh = S.shadow;
-  if (sh && !krak && (sh.show || S.state === 'bite' || S.state === 'reeling')) {
+  if (sh && !krak && !S.jump && (sh.show || S.state === 'bite' || S.state === 'reeling')) {
     ctx.globalAlpha = 0.45;
     const x = (S.state === 'reeling' || S.state === 'bite') ? S.bob.x - sh.w / 2 + Math.sin(S.t * 12) * 1.5 : (sh.cx ?? sh.x);
     const y = (S.state === 'reeling' || S.state === 'bite') ? 106 : sh.y;
@@ -1342,6 +1592,7 @@ function draw() {
     }
     drawProps(P);
     drawPaintedCat(P);
+    drawThief(P, performance.now() / 1000);
   } else {
   // pixel stand-ins while the paintings load
   // pilings
@@ -1454,7 +1705,7 @@ function updateHud() {
   const meterOn = S.state === 'charging' || S.state === 'reeling';
   $('meterRow').hidden = !meterOn; $('meter').hidden = !meterOn;
   let msg = '';
-  if (S.state === 'idle') msg = 'Hold anywhere to wind up. Let go to cast.';
+  if (S.state === 'idle') msg = THIEF.phase === 'perched' ? 'A gull is eyeing your dinner! Tap the gull!' : flashMsg() || (frenzyOn(performance.now() / 1000) ? 'Gulls are diving! Cast near them.' : 'Hold anywhere to wind up. Let go to cast.');
   else if (S.state === 'charging') {
     $('meterLabel').textContent = 'CAST POWER';
     $('meterRight').textContent = { near: 'close in', mid: 'medium', far: 'far out' }[depthFromPower(S.power)];
@@ -1476,7 +1727,7 @@ function updateHud() {
     $('zoneSweet').style.opacity = S.ghostOut ? '0.25' : '1';
     $('zoneSnap').style.left = '82%'; $('zoneSnap').style.width = '18%';
     $('meterMark').style.left = (clamp(S.tension, 0, 1) * 100) + '%';
-    msg = S.slack > 0.6 ? 'Line is slack! Reel!' : S.fightMsg ? S.fightMsg : S.surgeLeft > 0 ? 'It is pulling! Ease off!' : S.tension > 0.82 ? 'Ease off!' : 'Hold to reel. Keep it in the green.';
+    msg = S.jump ? 'It jumped! TAP!' : flashMsg() ? flashMsg() : S.slack > 0.6 ? 'Line is slack! Reel!' : S.fightMsg ? S.fightMsg : S.surgeLeft > 0 ? 'It is pulling! Ease off!' : S.tension > 0.82 ? 'Ease off!' : 'Hold to reel. Keep it in the green.';
   }
   else if (S.state === 'message') msg = ui.msg;
   else if (S.state === 'landing') msg = S.landMsg;
@@ -1512,8 +1763,26 @@ function showCatch(f, size, isNew, isRecord, dinnerNote, gold, newGold, junkNote
   S.cardAt = performance.now();
   setTimeout(() => { if (!$('catchOverlay').hidden) $('keepFishing').focus(); }, 800);
 }
+function showTitle() {
+  $('titleTips').hidden = !!SAVE.seenTips;
+  $('title').hidden = false;
+  setTimeout(() => $('startBtn').focus(), 300);
+}
+$('startBtn').addEventListener('click', () => {
+  $('title').hidden = true;
+  if (!SAVE.seenTips) { SAVE.seenTips = true; persist(); }
+  if (SAVE.sound) sndInit();
+});
+function paintSoundBtn() {
+  const on = !!SAVE.sound;
+  $('soundWaves').toggleAttribute('hidden', !on); $('soundX').toggleAttribute('hidden', on);
+  $('soundBtn').setAttribute('aria-pressed', on ? 'true' : 'false');
+  $('soundBtn').setAttribute('aria-label', on ? 'Sound is on. Turn sound off' : 'Sound is off. Turn sound on');
+}
+$('soundBtn').addEventListener('click', () => { SAVE.sound = !SAVE.sound; persist(); if (SAVE.sound) { sndInit(); SFX.chime(); } paintSoundBtn(); });
+paintSoundBtn();
 const cardReady = () => performance.now() - (S.cardAt || 0) > 700;   // a finger still down from reeling should not dismiss the card
-$('keepFishing').addEventListener('click', () => { if (!cardReady()) return; $('catchOverlay').hidden = true; setState('idle'); });
+$('keepFishing').addEventListener('click', () => { if (!cardReady()) return; $('catchOverlay').hidden = true; setState('idle'); maybeThief(); });
 $('catchToJournal').addEventListener('click', () => { if (!cardReady()) return; $('catchOverlay').hidden = true; setState('idle'); openJournal(S.lastCatch); });
 
 /* ---------- Journal ---------- */
@@ -1591,6 +1860,8 @@ if (new URLSearchParams(location.search).has('debug')) {
   mk('rain', () => { SAVE.weather = SAVE.weather === 'rain' ? 'clear' : 'rain'; });
   mk('bite now', () => { if (S.state === 'waiting') S.waitAt = S.t; });
   mk('tentacle', () => { CAMEO.next = 0; });
+  mk('frenzy', () => { FRENZY.next = 0; FRENZY.until = 0; });
+  mk('gull', () => { S.lastPts = 1; S.lastMadeDinner = false; const r = Math.random; Math.random = () => 0; maybeThief(); Math.random = r; });
   mk('reset', () => { SAVE = freshSave(); persist(); updateFound(); });
 }
 
@@ -1609,10 +1880,11 @@ function frame(now) {
     const done = CRITICAL.filter(imgReady).length, pct = Math.round(100 * done / CRITICAL.length);
     if (pct !== loadPct) { loadPct = pct; $('loadFill').style.width = pct + '%'; }
     if (now > 9000) $('loadMsg').textContent = 'Still reeling it in. Slow connection?';
-    if (allArtReady() || now > 25000) { shown = true; cv.classList.add('ready'); $('loading').classList.add('done'); }
+    if (allArtReady() || now > 25000) { shown = true; cv.classList.add('ready'); $('loading').classList.add('done'); showTitle(); }
   }
   const paused = !$('journal').hidden;
   if (!paused) update(dt);
+  sndFrame(now);
   draw();
   updateHud();
   saveTimer += dt; if (saveTimer > 5) { saveTimer = 0; persist(); }
@@ -1633,6 +1905,9 @@ window.__tb = {
   closeCard() { $('catchOverlay').hidden = true; setState('idle'); },
   catPose, dinnerOpen,
   cameo() { CAMEO.next = 0; },
+  frenzy() { FRENZY.next = 0; FRENZY.until = 0; },
+  thief() { S.lastPts = 1; S.lastMadeDinner = false; const r = Math.random; Math.random = () => 0; maybeThief(); Math.random = r; },
+  hideTitle() { $('title').hidden = true; },
 };
 </script>
 </body>

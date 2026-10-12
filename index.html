@@ -16,6 +16,12 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://games.shauna.digital/saltwhisker/og.jpg">
 <meta name="theme-color" content="#1d3b52">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="art/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Saltwhisker">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2032%2032%27%3E%3Crect%20width%3D%2732%27%20height%3D%2732%27%20rx%3D%278%27%20fill%3D%27%231d3b52%27/%3E%3Cpath%20d%3D%27M7%2018a9%209%200%200%201%2018%200z%27%20fill%3D%27%23d8433a%27/%3E%3Cpath%20d%3D%27M7%2018a9%209%200%200%200%2018%200z%27%20fill%3D%27%23f4f1ea%27/%3E%3Crect%20x%3D%2715%27%20y%3D%274%27%20width%3D%272%27%20height%3D%276%27%20rx%3D%271%27%20fill%3D%27%23f4f1ea%27/%3E%3C/svg%3E">
 <link rel="preload" as="image" href="art/pier.webp">
 <link rel="preload" as="image" href="art/sky-day.webp">
@@ -95,8 +101,10 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   display: flex; flex-direction: column; gap: 10px;
 }
 @media (orientation: landscape) and (max-height: 520px) {
-  .panel { align-self: flex-end; width: 300px; }
+  /* bottom left, over the pilings: the sea and its signs are to the right of the pier */
+  .panel { align-self: flex-start; width: 300px; }
 }
+.panel.quiet { display: none; }   /* the basic hints go away once the player has cast a few times */
 .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .label { font-size: 17px; font-weight: 700; letter-spacing: 0.5px; }
 .panel .small { font-family: inherit; font-style: italic; font-weight: 500; font-size: 15px; color: var(--muted); }
@@ -174,6 +182,11 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .slot .hint { font-family: 'Kalam', cursive; font-size: 14px; color: #5a4a3a; }
 .detail { max-width: 520px; margin: 18px auto 0; display: flex; flex-direction: column; gap: 12px; }
 .detail .sketch { height: 240px; }
+.backup { max-width: 520px; margin: 28px auto 0; padding-top: 18px; border-top: 1.5px dashed #b9a787; display: flex; flex-direction: column; gap: 10px; }
+.backup .bnote { margin: 0; font-family: 'Kalam', cursive; font-size: 15px; line-height: 1.35; color: #5a4a3a; }
+.backup .brow, .backup .row { display: flex; gap: 10px; }
+.backup .btn { flex: 1; min-height: 44px; font-size: 15px; }
+.backup textarea { width: 100%; box-sizing: border-box; font-family: 'Courier Prime', monospace; font-size: 13px; padding: 8px; border: 1.5px solid var(--edge); border-radius: 10px; background: #fbf6ea; color: var(--ink); resize: none; }
 
 .debug {
   position: fixed; left: 8px; bottom: 8px; display: flex; flex-wrap: wrap; gap: 4px; max-width: 260px; pointer-events: auto;
@@ -259,6 +272,16 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   </div>
   <div class="grid" id="journalGrid"></div>
   <div class="detail" id="journalDetail" hidden></div>
+  <div class="backup" id="backup">
+    <p class="bnote">Phones forget. Copy a backup code now and then, and paste it on a new phone (or after a browser clears up) to get this Tidebook back.</p>
+    <div class="brow">
+      <button class="btn" id="backupCopy">COPY BACKUP CODE</button>
+      <button class="btn" id="backupPaste">PASTE A CODE</button>
+    </div>
+    <textarea id="backupBox" rows="3" spellcheck="false" aria-label="Backup code" hidden></textarea>
+    <div class="row" id="backupRow" hidden><button class="btn primary" id="backupRestore">RESTORE</button><button class="btn" id="backupCancel">CANCEL</button></div>
+    <p class="bnote" id="backupMsg" aria-live="polite"></p>
+  </div>
 </div>
 
 <div class="debug" id="debug" hidden></div>
@@ -297,6 +320,7 @@ const TUNE = {
   twitchGap: 0.7,          // twitches at least this far apart (s) draw the fish in
   twitchSpeed: 0.7,        // each good twitch keeps this share of the remaining wait
   twitchSpook: 4,          // this many twitches inside 1.8 s scares the fish off
+  quietAfter: 5,           // after this many casts (ever), the basic "hold to cast" and "wait" hints stay hidden
 };
 
 /* ---------- Fish ---------- */
@@ -547,6 +571,7 @@ function cast() {
   S.bob.tx = lerp(a, b, p);
   S.bob.sx = TIP.x; S.bob.sy = TIP.y + 4;
   setState('flying'); SFX.cast();
+  SAVE.casts = (SAVE.casts || 0) + 1; if (SAVE.casts <= TUNE.quietAfter) persist();
 }
 function startWaiting() {
   setState('waiting');
@@ -1503,25 +1528,26 @@ function drawSigns(P, now) {
     const y = 102, t = reduceMotion ? 1 : now + g.seed;
     ctx.save(); ctx.globalAlpha = a;
     if (g.kind === 'bubbles') {
-      ctx.strokeStyle = P.wave; ctx.lineWidth = 0.35;
-      for (let i = 0; i < 5; i++) {
-        const ph = reduceMotion ? i / 5 : (t * 0.9 + i / 5) % 1;
-        const bx = g.x + Math.sin(i * 2.3 + g.seed) * 2.2, r = 0.35 + 0.45 * ph;
-        ctx.globalAlpha = a * (1 - ph * 0.7);
-        ctx.beginPath(); ctx.arc(bx, y - 0.2 - ph * 0.6, r, 0, 7); ctx.stroke();
+      // bubbles: a few rings growing and popping, big enough to spot at phone width
+      ctx.strokeStyle = P.wave; ctx.lineWidth = 0.5;
+      for (let i = 0; i < 6; i++) {
+        const ph = reduceMotion ? i / 6 : (t * 0.9 + i / 6) % 1;
+        const bx = g.x + Math.sin(i * 2.3 + g.seed) * 3, r = 0.5 + 0.8 * ph;
+        ctx.globalAlpha = a * (1 - ph * 0.6);
+        ctx.beginPath(); ctx.arc(bx, y - 0.2 - ph * 0.9, r, 0, 7); ctx.stroke();
       }
     } else if (g.kind === 'fin') {
       const fx = g.x + (reduceMotion ? 0 : Math.sin(t * 0.7) * 3), dir = reduceMotion ? 1 : Math.cos(t * 0.7) >= 0 ? 1 : -1;
       ctx.fillStyle = mulHex('#4a5866', sceneTint(P));
-      ctx.beginPath(); ctx.moveTo(fx - 1.6 * dir, y); ctx.quadraticCurveTo(fx - 0.2 * dir, y - 2.6, fx + 1.3 * dir, y - 2.4); ctx.quadraticCurveTo(fx + 0.6 * dir, y - 1.2, fx + 1.4 * dir, y); ctx.closePath(); ctx.fill();
-      ctx.strokeStyle = P.wave; ctx.lineWidth = 0.35; ctx.globalAlpha = a * 0.8;
-      ctx.beginPath(); ctx.moveTo(fx - 1.8 * dir, y + 0.1); ctx.lineTo(fx - 5 * dir, y + 0.9); ctx.moveTo(fx - 1.8 * dir, y + 0.1); ctx.lineTo(fx - 4.6 * dir, y - 0.5); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(fx - 2.3 * dir, y); ctx.quadraticCurveTo(fx - 0.3 * dir, y - 3.7, fx + 1.9 * dir, y - 3.4); ctx.quadraticCurveTo(fx + 0.9 * dir, y - 1.7, fx + 2 * dir, y); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = P.wave; ctx.lineWidth = 0.5; ctx.globalAlpha = a * 0.85;
+      ctx.beginPath(); ctx.moveTo(fx - 2.5 * dir, y + 0.1); ctx.lineTo(fx - 7 * dir, y + 1.2); ctx.moveTo(fx - 2.5 * dir, y + 0.1); ctx.lineTo(fx - 6.5 * dir, y - 0.7); ctx.stroke();
     } else {
       const pulse = reduceMotion ? 0.8 : 0.7 + 0.3 * Math.sin(t * 1.3);
-      ctx.globalAlpha = a * 0.32 * pulse; ctx.fillStyle = '#05121e';
-      ctx.beginPath(); ctx.ellipse(g.x, y + 1.6, 7, 1.6, 0, 0, 7); ctx.fill();
-      ctx.globalAlpha = a * 0.5; ctx.strokeStyle = P.wave; ctx.lineWidth = 0.3;
-      ctx.beginPath(); ctx.ellipse(g.x, y + 0.4, 4 + pulse * 2, 0.5 + pulse * 0.2, 0, 0, 7); ctx.stroke();
+      ctx.globalAlpha = a * 0.4 * pulse; ctx.fillStyle = '#05121e';
+      ctx.beginPath(); ctx.ellipse(g.x, y + 1.8, 9, 2.2, 0, 0, 7); ctx.fill();
+      ctx.globalAlpha = a * 0.6; ctx.strokeStyle = P.wave; ctx.lineWidth = 0.45;
+      ctx.beginPath(); ctx.ellipse(g.x, y + 0.4, 5 + pulse * 2.5, 0.6 + pulse * 0.3, 0, 0, 7); ctx.stroke();
     }
     ctx.restore();
   }
@@ -1990,6 +2016,8 @@ function updateHud() {
   m.style.fontWeight = S.state === 'bite' ? '800' : '';
   m.style.fontSize = S.state === 'bite' ? '26px' : '';
   $('panel').style.visibility = (S.state === 'caught' || S.state === 'flying') ? 'hidden' : 'visible';
+  const basic = msg === 'Hold anywhere to wind up. Let go to cast.' || msg === 'Tap to twitch the bait. Wait for the dip...';
+  $('panel').classList.toggle('quiet', basic && (SAVE.casts || 0) >= TUNE.quietAfter);
 }
 
 /* ---------- Catch card ---------- */
@@ -2049,6 +2077,45 @@ function closeJournal() {
   if (!$('journalDetail').hidden) { $('journalDetail').hidden = true; $('journalGrid').hidden = false; return; }
   $('journal').hidden = true;
 }
+
+/* ---------- Backup code: the whole save as one pasteable string, so a cleared browser or a new phone does not lose the Tidebook ---------- */
+const BACKUP_TAG = 'SW1.';
+function backupCode() {
+  const bytes = new TextEncoder().encode(JSON.stringify(SAVE));
+  let bin = ''; bytes.forEach(b => bin += String.fromCharCode(b));
+  return BACKUP_TAG + btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function readBackup(code) {
+  code = (code || '').trim();
+  if (!code.startsWith(BACKUP_TAG)) return null;
+  try {
+    const b64 = code.slice(BACKUP_TAG.length).replace(/-/g, '+').replace(/_/g, '/');
+    const bin = atob(b64 + '='.repeat((4 - b64.length % 4) % 4));
+    const s = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0))));
+    return s && s.v === 1 && s.found && typeof s.found === 'object' ? s : null;
+  } catch (e) { return null; }
+}
+function backupSay(t) { $('backupMsg').textContent = t; }
+function backupShow(mode) {
+  $('backupBox').hidden = !mode; $('backupRow').hidden = mode !== 'paste';
+  $('backupBox').readOnly = mode === 'copy';
+  if (mode === 'copy') { $('backupBox').value = backupCode(); $('backupBox').focus(); $('backupBox').select(); }
+  else if (mode === 'paste') { $('backupBox').value = ''; $('backupBox').focus(); }
+}
+$('backupCopy').addEventListener('click', async () => {
+  const code = backupCode();
+  try { await navigator.clipboard.writeText(code); backupShow(''); backupSay('Copied. Keep it somewhere safe, like a note to yourself.'); }
+  catch (e) { backupShow('copy'); backupSay('Select the code and copy it.'); }
+});
+$('backupPaste').addEventListener('click', () => { backupShow('paste'); backupSay('Paste the code, then tap Restore. It replaces the Tidebook on this phone.'); });
+$('backupCancel').addEventListener('click', () => { backupShow(''); backupSay(''); });
+$('backupRestore').addEventListener('click', () => {
+  const s = readBackup($('backupBox').value);
+  if (!s) { backupSay('That does not look like a Saltwhisker backup code.'); return; }
+  const mine = Object.keys(SAVE.found).length, theirs = Object.keys(s.found).length;
+  SAVE = s; persist(); renderJournal(); updateFound(); backupShow('');
+  backupSay('Restored: ' + theirs + ' entr' + (theirs === 1 ? 'y' : 'ies') + (mine > theirs ? ' (this phone had ' + mine + ').' : '.'));
+});
 function renderJournal() {
   const n = FISH.filter(f => isFish(f) && SAVE.found[f.id]).length;
   const odds = FISH.filter(f => f.junk && SAVE.found[f.id]).length;

@@ -46,7 +46,7 @@ Add `?debug` to the URL for a small panel to jump the clock, toggle rain, force 
 
 **Painted backdrops** live in `art/`, all by Shauna:
 
-- `sky-day.jpg` and `sky-night.jpg`: full skies. Each is placed so its horizon (90% of the way down) sits on the sea. Day fades to the code's dusk colors, then the night painting fades in. Rain adds a gray wash.
+- `sky-day.webp` and `sky-night.webp`: full skies. Each is placed so its horizon (90% of the way down) sits on the sea. Day fades to the code's dusk colors, then the night painting fades in. Rain adds a gray wash.
 - `far-day.webp` and `far-night.webp`: the distant village and lighthouse, cut out from a magenta background, cropped to their content, with soft faded side edges. The night painting has a slightly different layout, so it is lined up on the lighthouse (`FAR_NIGHT_LAMP`). Dusk uses a tinted copy of the day layer. The lighthouse light pulses in code at dusk and night.
 
 To process a new coast image: `python3 tools/key-magenta.py input.png art/far-name.webp`. The full how-to, the screen-coverage math and the style-neutral prompts are in the local notes (`_private/findings/`, not committed). A dusk painting follows the same pattern in `drawPaintedSky` and `drawFar`.

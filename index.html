@@ -17,6 +17,10 @@
 <meta name="twitter:image" content="https://games.shauna.digital/saltwhisker/og.jpg">
 <meta name="theme-color" content="#1d3b52">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%231d3b52'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%23f3ead8'/%3E%3Crect x='7' y='3' width='2' height='10' fill='%232b2a33'/%3E%3Crect x='4' y='6' width='2' height='1' fill='%23b5453a'/%3E%3C/svg%3E">
+<link rel="preload" as="image" href="art/pier.webp">
+<link rel="preload" as="image" href="art/sky-day.webp">
+<link rel="preload" as="image" href="art/sky-night.webp">
+<link rel="preload" as="image" href="art/cat-body.webp">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Shantell+Sans:wght@400..800&family=Kalam:wght@400;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
@@ -33,7 +37,14 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 0.6s ease; }
-canvas.ready { opacity: 1; }   /* the scene fades in once every painting has loaded, so the pixel stand-ins never flash */
+canvas.ready { opacity: 1; }
+.loading { position: fixed; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+  background: linear-gradient(180deg, #1d3b52 0%, #0b1030 100%); transition: opacity 0.5s ease; }
+.loading.done { opacity: 0; pointer-events: none; }
+.loadmsg { margin: 0; font-family: 'Kalam', cursive; font-size: 21px; color: #f3ead8; text-align: center; padding: 0 24px; }
+.loadbar { width: 170px; height: 8px; border-radius: 999px; background: rgba(243, 234, 216, 0.2); overflow: hidden; }
+.loadfill { height: 100%; width: 0; border-radius: 999px; background: #ffcf6b; transition: width 0.3s ease; }
+@media (prefers-reduced-motion: reduce) { .loading, .loadfill { transition: none; } }   /* the scene fades in once every painting has loaded, so the pixel stand-ins never flash */
 @media (prefers-reduced-motion: reduce) { canvas { transition: none; } }
 button { font-family: inherit; color: var(--ink); cursor: pointer; pointer-events: auto; }
 button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
@@ -160,6 +171,10 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 </style>
 </head>
 <body>
+<div class="loading" id="loading" role="status" aria-live="polite">
+  <p class="loadmsg" id="loadMsg">Walter is putting on his hat...</p>
+  <div class="loadbar" aria-hidden="true"><div class="loadfill" id="loadFill"></div></div>
+</div>
 <canvas id="game" aria-label="Walter, a tuxedo cat, fishing off the end of a pier" role="img"></canvas>
 
 <div class="hud">
@@ -813,9 +828,9 @@ function drawCat(P) {
 /* ---------- Painted backdrops ---------- */
 // Shauna's painted sky. The image is placed in world pixels so its horizon (90% down) sits on the sea at y 96.
 const SKY_DAY = new Image();
-SKY_DAY.src = 'art/sky-day.jpg';
+SKY_DAY.src = 'art/sky-day.webp';
 const SKY_NIGHT = new Image();
-SKY_NIGHT.src = 'art/sky-night.jpg';
+SKY_NIGHT.src = 'art/sky-night.webp';
 const SKY_RECT = { x: 10, w: 200 };   // world x range the painting spans; height follows its aspect ratio
 // Distant scenery (village left, lighthouse right), cut out and cropped to its content.
 // Its bottom edge is the horizon. Shifted left so the lighthouse shows on phones in portrait.
@@ -1516,11 +1531,20 @@ if (new URLSearchParams(location.search).has('debug')) {
 /* ---------- Loop ---------- */
 let last = performance.now(), saveTimer = 0;
 function allArtReady() { return sceneReady() && imgReady(SKY_DAY) && imgReady(SKY_NIGHT) && farReady(); }
-let shown = false;
+// Everything the first screen needs. A painting that fails to load gets one retry.
+const CRITICAL = [...Object.values(ART), SKY_DAY, SKY_NIGHT, FAR_DAY, FAR_NIGHT];
+CRITICAL.forEach(im => im.addEventListener('error', () => { if (!im.dataset.retried) { im.dataset.retried = 1; setTimeout(() => { im.src = im.src.split('?')[0] + '?r=' + Date.now(); }, 800); } }));
+let shown = false, loadPct = -1;
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  // reveal the scene when the paintings are in (or after 5 s on a very slow connection)
-  if (!shown && (allArtReady() || now > 5000)) { shown = true; cv.classList.add('ready'); }
+  // the loading screen stays up until every painting is in, so the pixel stand-ins never show;
+  // only if something is truly stuck (25 s) does the game start without it
+  if (!shown) {
+    const done = CRITICAL.filter(imgReady).length, pct = Math.round(100 * done / CRITICAL.length);
+    if (pct !== loadPct) { loadPct = pct; $('loadFill').style.width = pct + '%'; }
+    if (now > 9000) $('loadMsg').textContent = 'Still reeling it in. Slow connection?';
+    if (allArtReady() || now > 25000) { shown = true; cv.classList.add('ready'); $('loading').classList.add('done'); }
+  }
   const paused = !$('journal').hidden;
   if (!paused) update(dt);
   draw();

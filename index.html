@@ -153,7 +153,12 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .slot { position: relative; }
 .slot.odd { background: #f4efe3; }
 .slot.odd .no { color: #8a6f4a; font-style: italic; }
-.goldmark { position: absolute; top: 6px; right: 8px; color: #d9a521; font-size: 16px; text-shadow: 0 1px 0 #8a6510; }
+.goldmark { position: absolute; top: 6px; right: 8px; color: #d9a521; font-size: 16px; text-shadow: 0 1px 0 #8a6510; letter-spacing: 2px; }
+.goldmark .vm { color: #3d3a40; text-shadow: none; }
+.sketch.art img.tiny, .slot .mini img.tiny { transform: scale(0.55); }
+.varrow { display: flex; gap: 10px; align-items: center; }
+.varrow .sketch { flex: 0 0 96px; height: 72px; font-size: 13px; padding: 4px; }
+.varrow .small { flex: 1; }
 .sketch.art img, .slot .mini img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
 .fishname { margin: 0; font-family: 'Kalam', cursive; font-weight: 700; font-size: 30px; line-height: 1.1; color: var(--deep); }
 .facts { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 15px; font-weight: 700; }
@@ -325,6 +330,9 @@ const TUNE = {
   twitchSpeed: 0.7,        // each good twitch keeps this share of the remaining wait
   twitchSpook: 4,          // this many twitches inside 1.8 s scares the fish off
   quietAfter: 5,           // after this many casts (ever), the basic "hold to cast" and "wait" hints stay hidden
+  tuxChance: 0.03,         // share of bites (that are not golden) that are a black-and-white tuxedo version
+  tinyChance: 0.06,        // share of the rest that are a tiny baby version, which Walter lets go
+  starfishHat: 150,        // seconds a caught starfish stays stuck to Walter's hat
 };
 
 /* ---------- Fish ---------- */
@@ -354,26 +362,51 @@ const FISH = [
   { id: 104, name: 'Empty Sardine Tin',   time: 'any', depth: 'near', w: 1.2, size: [10, 12], str: 0.1, rarity: 'Odds and Ends', fight: 'junk', junk: true, refuse: true, note: 'Empty. Someone ate them. I am furious.', hint: 'something shiny, close in' },
   { id: 105, name: 'Single Flip-flop',    time: 'any', depth: 'any', w: 1.2, size: [22, 28], str: 0.12, rarity: 'Odds and Ends', fight: 'junk', junk: true, refuse: true, note: 'One shoe. Where is the other one? Where is the person?', hint: 'something floppy' },
   { id: 106, name: 'Sunken Chest',        time: 'any', depth: 'far', w: 1.0, size: [40, 60], str: 0.55, rarity: 'Odds and Ends', fight: 'heavy', junk: true, refuse: true, chest: true, note: 'Full of sand and one gold coin. I feel lucky now.', hint: 'follow the map' },
+  { id: 107, name: 'Postcard',            time: 'any', depth: 'any', w: 0.8, size: [10, 15], str: 0.1, rarity: 'Odds and Ends', fight: 'junk', junk: true, refuse: true, postcard: true, note: 'Mail from somewhere far away. Signed with a paw print.', hint: 'mail from far away' },
+  { id: 108, name: 'Ship in a Bottle',    time: 'any', depth: 'any', w: 0.4, size: [20, 28], str: 0.12, rarity: 'Odds and Ends', fight: 'junk', junk: true, refuse: true, note: 'A whole boat, inside a bottle. How. HOW. It looks like that little boat out there.', hint: 'a bottle, but heavier' },
+  { id: 109, name: 'Clingy Crab',         time: 'any', depth: 'near', w: 0.9, size: [6, 10], str: 0.15, rarity: 'Odds and Ends', fight: 'dart', junk: true, refuse: true, landMsg: 'A crab... hugging the bobber?', note: 'Not on the hook. On the bobber. Hugging it. Would not let go for ages.', hint: 'something clingy, close in' },
+  { id: 110, name: 'Jellyfish',           time: 'any', depth: 'any', w: 0.8, size: [12, 20], str: 0.1, rarity: 'Odds and Ends', fight: 'junk', junk: true, refuse: true, drop: true, landMsg: 'Wobbly! NOPE. Back it goes.', note: 'Wobbly, see-through and stingy. Dropped it right away. Did not scream. Much.', hint: 'something wobbly' },
+  { id: 111, name: 'Starfish',            time: 'any', depth: 'near', w: 0.8, size: [8, 14], str: 0.1, rarity: 'Odds and Ends', fight: 'junk', junk: true, refuse: true, starfish: true, landMsg: 'A starfish! It is... on my hat now.', note: 'Stuck itself to my hat. Looks good, honestly. It can stay a while.', hint: 'something pointy, close in' },
+  { id: 112, name: 'Oyster',              time: 'any', depth: 'any', w: 0.9, size: [7, 11], str: 0.2, rarity: 'Odds and Ends', fight: 'heavy', junk: true, refuse: true, oyster: true, note: 'Shut tight. Grumpy, like a grouper with a lid.', hint: 'something stubborn on the bottom' },
 ];
+// Postcards come one at a time, each from a different faraway place (the places on the map later).
+const POSTCARDS = [
+  { place: 'Lantern Bay',     line: 'The fish here glow in the dark. Bring a jar.' },
+  { place: 'Fogwhistle Cove', line: 'So foggy you fish by sound. Wish you were here.' },
+  { place: 'Kelp Hollow',     line: 'The seaweed is taller than the lighthouse. Something big lives in it.' },
+  { place: 'Cinder Isle',     line: 'Warm water, black sand, very sleepy crabs.' },
+  { place: 'Frostfin Harbor', line: 'Ice on the pier. The fish here wear sweaters. Probably.' },
+];
+const PEARL_CHANCE = 0.3;   // share of oysters with a pearl inside
 
 // Shauna's fish and odds-and-ends paintings (art/fish/). Anything without one yet shows the dashed placeholder.
 const FISH_ART = { 1: 'fish-001-pier-perch', 2: 'fish-002-sulky-sardine', 3: 'fish-003-drizzle-darter', 4: 'fish-004-bucket-crab', 5: 'fish-005-gull-snack', 6: 'fish-006-dusky-flounder', 7: 'fish-007-grumble-grouper',
   8: 'fish-008-lamplight-grouper', 9: 'fish-009-longline-tuna', 10: 'fish-010-sock-eel', 11: 'fish-011-lanternfish', 12: 'fish-012-tiny-admiral', 13: 'fish-013-sunday-snapper',
   14: 'fish-014-old-boot-bass', 15: 'fish-015-the-pier-ghost', 16: 'fish-016-the-kraken',
-  101: 'junk-101-message-in-a-bottle', 102: 'junk-102-torn-map', 103: 'junk-103-rubber-duck', 104: 'junk-104-empty-sardine-tin', 105: 'junk-105-single-flip-flop', 106: 'junk-106-sunken-chest' };
+  101: 'junk-101-message-in-a-bottle', 102: 'junk-102-torn-map', 103: 'junk-103-rubber-duck', 104: 'junk-104-empty-sardine-tin', 105: 'junk-105-single-flip-flop', 106: 'junk-106-sunken-chest',
+  // waiting on Shauna's paintings: until a file is in art/fish/ these fall back to the placeholder
+  107: 'junk-107-postcard', 108: 'junk-108-ship-in-a-bottle', 109: 'junk-109-clingy-crab', 110: 'junk-110-jellyfish', 111: 'junk-111-starfish', 112: 'junk-112-oyster' };
+const ART_MISSING = new Set();   // paintings that failed to load (not made yet): show the placeholder instead
 function fishArtEl(f) {
-  if (!FISH_ART[f.id]) return null;
+  if (!FISH_ART[f.id] || ART_MISSING.has(f.id)) return null;
   const im = document.createElement('img');
   im.src = 'art/fish/' + FISH_ART[f.id] + '.webp'; im.alt = 'Painting of the ' + f.name; im.decoding = 'async';
   if (f.fight === 'ghost') im.className = 'ghostly';   // the painting is opaque; the see-through glow is added here
   return im;
 }
-function fillSketch(el, f, text, gold) {
-  el.innerHTML = ''; const im = fishArtEl(f);
+// variant: null, 'gold', 'tux' or 'tiny' (true still means gold, for older calls)
+function fillSketch(el, f, text, variant) {
+  if (variant === true) variant = 'gold';
+  el.innerHTML = ''; const im = fishArtEl(f), V = variant && VARIANT[variant];
   el.classList.toggle('art', !!im);
-  el.classList.toggle('gold', !!gold);
-  if (im) { if (gold) { im.style.filter = GOLD.filter + (im.className === 'ghostly' ? ' drop-shadow(0 0 8px rgba(255, 214, 120, 0.85))' : ''); im.alt = 'Painting of a golden ' + f.name; } el.appendChild(im); }
-  else el.textContent = gold ? '[Golden ' + f.name + ': drawing coming soon]' : text;
+  el.classList.toggle('gold', variant === 'gold');
+  const placeholder = () => { el.classList.remove('art'); el.textContent = V ? '[' + variantName(f, variant) + ': drawing coming soon]' : text; };
+  if (!im) { placeholder(); return; }
+  if (V && V.filter) im.style.filter = V.filter + (im.className === 'ghostly' ? ' drop-shadow(0 0 8px ' + (variant === 'gold' ? 'rgba(255, 214, 120, 0.85)' : 'rgba(220, 220, 230, 0.85)') + ')' : '');
+  if (variant === 'tiny') im.classList.add('tiny');
+  if (V) im.alt = 'Painting of ' + (/^[aeiou]/i.test(V.word) ? 'an ' : 'a ') + variantName(f, variant).replace(/^The /, '').toLowerCase();
+  im.onerror = () => { ART_MISSING.add(f.id); im.remove(); placeholder(); };
+  el.appendChild(im);
 }
 
 // Each fish fights in its own way. Notes show in the journal once the fish is caught.
@@ -394,6 +427,23 @@ const isFish = f => !f.junk;
 const FISH_COUNT = () => FISH.filter(isFish).length;
 const goldChance = () => GOLD.chance * (SAVE.lucky ? 2 : 1);   // the chest's lucky coin doubles it
 const GOLD = { chance: 0.05, filter: 'sepia(1) saturate(3.2) hue-rotate(-14deg) brightness(1.08) contrast(1.05)' };
+// Rare versions of any fish (not odds and ends, not the Kraken), counted per species in the save
+// (rec.gold, rec.tux, rec.tiny). Each shows the fish's own painting with a filter or drawn small,
+// until painted versions exist. Golden shimmers in the water; tuxedo and tiny give no warning.
+const VARIANT = {
+  gold: { word: 'Golden', stamp: 'GOLDEN!', mark: '★', filter: GOLD.filter, title: 'Golden one caught',
+    hint: 'Watch for a gold shimmer in the water.', first: 'A golden one. Walter could not stop staring at it.', again: 'Another golden one. Still stunning.' },
+  tux:  { word: 'Tuxedo', stamp: 'TUXEDO!', mark: '◐', filter: 'grayscale(1) contrast(1.6) brightness(0.92)', canvas: 'grayscale(1) contrast(1.5) brightness(0.92)', title: 'Tuxedo one caught',
+    hint: 'Black and white, like Walter. Rare, and it gives no warning.', first: 'Black and white, just like me. We are family now. Not eating family.', again: 'Another tuxedo. The family grows.' },
+  tiny: { word: 'Tiny', stamp: 'TINY!', mark: '•', title: 'Tiny one caught',
+    hint: 'A baby one. Small, light, and it slips by quietly.', first: 'A baby. Put it back gently. Come back when you are bigger.', again: 'Another tiny one. Back it goes.' },
+};
+function variantName(f, v) {
+  if (!v) return f.name;
+  if (v === 'tiny' && f.id === 12) return 'Tinier Admiral';
+  const w = VARIANT[v].word;
+  return /^The /.test(f.name) ? 'The ' + w + ' ' + f.name.slice(4) : w + ' ' + f.name;
+}
 
 /* ---------- Save ---------- */
 const SAVE_KEY = 'saltwhisker.save';
@@ -444,6 +494,7 @@ function dailyFishId() {
   return pool[h % pool.length].id;
 }
 const DAILY = dailyFishId();
+const FORCE = { fish: null, variant: null, pearl: false };   // playtest hooks only: make the next bite a given fish or variant
 
 /* ---------- Clock and palettes ---------- */
 const PAL = {
@@ -512,6 +563,7 @@ function castRange() {
 }
 function isSunday() { return new Date().getDay() === 0; }
 function pickFish(sign) {
+  if (FORCE.fish) { const ff = FISH.find(f => f.id === FORCE.fish); if (ff) return ff; }
   const per = periodOf(hourOf(SAVE.gm));
   const pool = FISH.filter(f =>
     (f.time === 'any' || f.time === per) &&
@@ -519,6 +571,7 @@ function pickFish(sign) {
     (!f.weather || f.weather === SAVE.weather) &&
     (!f.sunday || isSunday()) &&
     (!f.map || (SAVE.mapPieces || 0) < 4) &&
+    (!f.postcard || (SAVE.postcards || 0) < POSTCARDS.length) &&
     (!f.chest || ((SAVE.mapPieces || 0) >= 4 && !SAVE.found[f.id])));
   let total = 0;
   const ws = pool.map(f => { const w = f.w * (f.id === DAILY ? TUNE.dailyBoost : 1) * signWeight(f, sign); total += w; return w; });
@@ -598,9 +651,11 @@ function newBiter(wait) {
   // almost every fish nibbles at least once first, so the player can read it
   S.nibbleAt = Math.random() < 0.9 ? S.t + Math.min(rand(0.9, 1.6), Math.max(0.5, wait * 0.45)) : 99;
   S.nibbled = false;
-  S.gold = !S.fish.junk && S.fish.fight !== 'kraken' && Math.random() < goldChance();
+  const canVary = !S.fish.junk && S.fish.fight !== 'kraken';
+  S.variant = !canVary ? null : FORCE.variant ? FORCE.variant : Math.random() < goldChance() ? 'gold' : Math.random() < TUNE.tuxChance ? 'tux' : Math.random() < TUNE.tinyChance ? 'tiny' : null;
+  S.gold = S.variant === 'gold';
   const fromLeft = Math.random() < 0.5;
-  const sz = clamp(S.fish.size[1] / 10, 4, 14);
+  const sz = clamp(S.fish.size[1] / 10, 4, 14) * (S.variant === 'tiny' ? 0.5 : 1);
   S.shadow = { x: S.bob.x + (fromLeft ? -40 : 40), y: rand(112, 124), w: sz, show: false };
   S.shadow.cx = S.shadow.x;
 }
@@ -701,13 +756,26 @@ function bottleMessage() {
 function landFish() {
   const f = S.fish;
   // a perfect cast tends to bring a bigger one
-  const size = Math.round(lerp(f.size[0], f.size[1], S.perfect ? 0.45 + 0.55 * Math.random() : Math.random()));
+  const v = S.variant || null;
+  const size = v === 'tiny' ? Math.max(2, Math.round(f.size[0] * rand(0.25, 0.4)))
+    : Math.round(lerp(f.size[0], f.size[1], S.perfect ? 0.45 + 0.55 * Math.random() : Math.random()));
   S.perfectCatch = !!S.perfect;
   const rec = SAVE.found[f.id];
   const isNew = !rec;
-  const isRecord = !isNew && size > rec.best;
-  const gold = !!S.gold;
+  const isRecord = !isNew && size > rec.best && v !== 'tiny';
   let junkNote = '';
+  if (f.postcard) {
+    SAVE.postcards = Math.min(POSTCARDS.length, (SAVE.postcards || 0) + 1);
+    const pc = POSTCARDS[SAVE.postcards - 1];
+    junkNote = 'Postcard ' + SAVE.postcards + ' of ' + POSTCARDS.length + ', from ' + pc.place + ': "' + pc.line + '" Signed with a paw print.';
+  }
+  S.pearl = false;
+  if (f.oyster) {
+    S.pearl = Math.random() < PEARL_CHANCE || FORCE.pearl;
+    if (S.pearl) SAVE.pearls = (SAVE.pearls || 0) + 1;
+    junkNote = S.pearl ? 'There was a pearl inside! That makes ' + SAVE.pearls + (SAVE.pearls === 1 ? ' pearl.' : ' pearls.') : f.note + ' No pearl this time.';
+  }
+  if (f.starfish) S.starUntil = performance.now() / 1000 + 1.7 + TUNE.starfishHat;
   if (f.map) {
     SAVE.mapPieces = Math.min(4, (SAVE.mapPieces || 0) + 1);
     junkNote = SAVE.mapPieces < 4 ? 'Piece ' + SAVE.mapPieces + ' of 4. ' + f.note
@@ -717,20 +785,24 @@ function landFish() {
   if (f.id === 101) { SAVE.bottleNote = bottleMessage(); junkNote = f.note + ' It says: "' + SAVE.bottleNote + '"'; }
   // what the record looked like before this catch, so a gull that steals it can undo it. The gull never
   // bothers a first catch of a species: a new Tidebook entry is safe, only repeats (and a new best) are at stake
-  S.lastSteal = (!f.junk && f.fight !== 'kraken' && rec) ? { id: f.id, name: f.name, prev: JSON.parse(JSON.stringify(rec)) } : null;
+  // a tiny one goes straight back, so there is nothing for a gull to take
+  S.lastSteal = (!f.junk && f.fight !== 'kraken' && rec && v !== 'tiny') ? { id: f.id, name: f.name, prev: JSON.parse(JSON.stringify(rec)) } : null;
   if (isNew) SAVE.found[f.id] = { n: 1, best: size, first: todayISO() };
   else { rec.n++; if (isRecord) rec.best = size; }
-  const r2 = SAVE.found[f.id], newGold = gold && !r2.gold;
-  if (gold) r2.gold = (r2.gold || 0) + 1;
+  const r2 = SAVE.found[f.id], newVar = !!v && !r2[v];
+  if (v) r2[v] = (r2[v] || 0) + 1;
   persist();
   S.catches++;
   // the fish leaps out of the water and dangles from the rod for a moment, then the card comes up
-  (f.junk || f.refuse) ? SFX.meh() : SFX.chime();
-  if (isNew && !f.junk) setTimeout(SFX.purr, 1800);
-  mood(f.fight === 'kraken' ? 'shock' : (f.junk || f.refuse) ? 'meh' : (gold || isNew || isRecord) ? 'proud' : 'happy', f.fight === 'kraken' ? 2.6 : 2.2);
-  S.pending = [f, size, isNew, isRecord && !f.junk, null, gold, newGold, junkNote];
-  S.landMsg = f.fight === 'kraken' ? 'THE KRAKEN! He is... waving?' : f.junk ? 'Oh. ' + (/^[aeiou]/i.test(f.name) ? 'An ' : 'A ') + f.name.toLowerCase() + '.'
-    : gold ? 'A golden ' + f.name + '!' : f.refuse ? 'Got... a ' + f.name + '. Hmm.' : 'Got it! ' + f.name + '!';
+  (v === 'tux' || v === 'tiny') ? SFX.chime() : (f.junk || f.refuse) ? SFX.meh() : SFX.chime();
+  if ((isNew && !f.junk) || v === 'tux') setTimeout(SFX.purr, 1800);
+  mood(f.fight === 'kraken' || f.drop ? 'shock' : v === 'tux' ? 'proud' : v === 'tiny' ? 'happy' : f.starfish || S.pearl ? 'proud' : (f.junk || f.refuse) ? 'meh' : (v || isNew || isRecord) ? 'proud' : 'happy', f.fight === 'kraken' ? 2.6 : 2.2);
+  S.pending = [f, size, isNew, isRecord && !f.junk, null, v, newVar, junkNote];
+  S.landMsg = f.fight === 'kraken' ? 'THE KRAKEN! He is... waving?' : f.landMsg ? f.landMsg
+    : f.oyster && S.pearl ? 'An oyster... with a pearl inside!' : f.junk ? 'Oh. ' + (/^[aeiou]/i.test(f.name) ? 'An ' : 'A ') + f.name.toLowerCase() + '.'
+    : v === 'gold' ? 'A golden ' + f.name + '!' : v === 'tux' ? 'A tuxedo ' + f.name.replace(/^The /, '') + '! It looks just like Walter!'
+    : v === 'tiny' ? 'Aww. ' + (f.id === 12 ? 'A Tinier Admiral.' : 'A tiny ' + f.name.replace(/^The /, '') + '.')
+    : f.refuse ? 'Got... a ' + f.name + '. Hmm.' : 'Got it! ' + f.name + '!';
   S.leapFrom = S.bob.x;
   setState('landing');
   splash(S.bob.x, 102, 10);
@@ -805,7 +877,7 @@ function update(dt) {
         S.tension = lerp(S.tension, zc, Math.min(1, dt * 6)); S.slack = 0; S.surgeLeft = 0;
         break;
       }
-      const str = f.str * (1 - 0.5 * Math.min(1, S.t / TUNE.tireTime));   // fish tire as the fight goes on
+      const str = f.str * (S.variant === 'tiny' ? 0.45 : 1) * (1 - 0.5 * Math.min(1, S.t / TUNE.tireTime));   // fish tire as the fight goes on; tiny ones barely pull
       const zone = sweetZone();
       const sweet = S.tension >= zone[0] && S.tension <= zone[1];
       const o = fightStep(dt, str);
@@ -830,7 +902,7 @@ function update(dt) {
       break;
     }
     case 'landing':
-      if (S.t > (S.fish && S.fish.fight === 'kraken' ? 2.4 : 1.7)) { showCatch(...S.pending); setState('caught'); }
+      if (S.t > (S.fish && S.fish.fight === 'kraken' ? 2.4 : S.fish && S.fish.drop ? 1.1 : 1.7)) { showCatch(...S.pending); setState('caught'); }
       break;
     case 'message':
       if (S.t > S.msgUntil) setState('idle');
@@ -1381,6 +1453,7 @@ function drawPaintedCat(P) {
     // only stand in while that painting is still loading
     const face = faceNow(md), faceIm = face && ART['face-' + face];
     draw(faceIm && imgReady(faceIm) ? 'face-' + face : 'head');
+    if (draw.paint && S.starUntil && now < S.starUntil) drawHatStar(col, now);   // a caught starfish rides on the hat for a while
     // blink every few seconds (not with reduced motion)
     const eyeShut = md === 'sleepy' || ((md === 'happy' || md === 'proud') && me > 0.15 && me < 1.6);
     if (face && faceIm && imgReady(faceIm)) { /* the painting carries the expression */ }
@@ -1883,11 +1956,30 @@ function eventsUpdate(dt) {
   }
 }
 
+/* ---------- Starfish on the hat ---------- */
+// Drawn in the puppet's own image pixels, on the sou'wester just behind the front ear hole. Uses Shauna's
+// starfish painting once it exists; a small code star stands in until then.
+const HAT_STAR = { at: [192, 50], size: 70 };
+function drawHatStar(col, now) {
+  const f = FISH.find(x => x.starfish), im = leapImg(f);
+  const fade = clamp((S.starUntil - now) / 1.2, 0, 1), wob = reduceMotion ? 0 : Math.sin(now * 2.1) * 0.06;
+  ctx.save(); ctx.globalAlpha *= fade; ctx.translate(HAT_STAR.at[0], HAT_STAR.at[1]); ctx.rotate(-0.35 + wob);
+  const z = HAT_STAR.size;
+  if (im && imgReady(im)) { const h = z * im.naturalHeight / im.naturalWidth; ctx.drawImage(tinted('hatstar', im, col), -z / 2, -h / 2, z, h); }
+  else {
+    ctx.fillStyle = mulHex('#e9844f', col); ctx.strokeStyle = mulHex('#a8502a', col); ctx.lineWidth = 3;
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) { const r = i % 2 ? z * 0.2 : z * 0.5, a = -Math.PI / 2 + i * Math.PI / 5; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+  }
+  ctx.restore();
+}
+
 /* ---------- Landing a catch ---------- */
 const LEAP_IMG = {};
 function leapImg(f) {
-  if (!FISH_ART[f.id]) return null;
-  if (!LEAP_IMG[f.id]) LEAP_IMG[f.id] = loadImg('art/fish/' + FISH_ART[f.id] + '.webp');
+  if (!FISH_ART[f.id] || ART_MISSING.has(f.id)) return null;
+  if (!LEAP_IMG[f.id]) { LEAP_IMG[f.id] = loadImg('art/fish/' + FISH_ART[f.id] + '.webp'); LEAP_IMG[f.id].onerror = () => ART_MISSING.add(f.id); }
   return LEAP_IMG[f.id];
 }
 // where the fish is: an arc from the water up to the rod tip, then dangling there
@@ -1913,13 +2005,15 @@ function drawLanding(P, x, y) {
     return;
   }
   const im = leapImg(f);
-  const len = clamp(f.size[1] / 6, 8, 15);
+  const len = clamp(f.size[1] / 6, 8, 15) * (S.variant === 'tiny' ? 0.5 : 1);
   const k = clamp(S.t / 0.85, 0, 1);
   const ang = k < 1 ? -0.9 + k * 1.4 : (reduceMotion ? 0.4 : 0.4 + Math.sin(S.t * 7) * 0.15 * Math.max(0, 1.6 - S.t));
   ctx.save(); ctx.translate(x, y + len * 0.15); ctx.rotate(ang);
   if (im && imgReady(im)) {
     const h = len * im.naturalHeight / im.naturalWidth;
+    if (S.variant === 'tux') ctx.filter = VARIANT.tux.canvas;   // browsers without canvas filters just show the plain painting
     ctx.drawImage(tinted('leap' + f.id + (S.gold ? 'g' : ''), im, S.gold ? mulHex(sceneTint(P), '#ffd36a') : sceneTint(P)), -len * 0.15, -h / 2, len, h);
+    ctx.filter = 'none';
   } else {
     ctx.fillStyle = S.gold ? '#f2c14e' : '#3d4a5c';
     ctx.beginPath(); ctx.ellipse(len * 0.35, 0, len / 2, len / 6, 0, 0, 7); ctx.fill();
@@ -2218,20 +2312,21 @@ function updateHud() {
 }
 
 /* ---------- Catch card ---------- */
-function showCatch(f, size, isNew, isRecord, _unused, gold, newGold, junkNote) {
-  $('catchStamp').hidden = !(isNew || isRecord || newGold);
-  $('catchStamp').textContent = newGold ? 'GOLDEN!' : isNew ? 'NEW ENTRY' : 'NEW BEST';
-  $('catchStamp').classList.toggle('goldstamp', !!newGold);
+function showCatch(f, size, isNew, isRecord, _unused, v, newVar, junkNote) {
+  const V = v && VARIANT[v];
+  $('catchStamp').hidden = !(isNew || isRecord || newVar || S.pearl);
+  $('catchStamp').textContent = newVar ? V.stamp : S.pearl ? 'PEARL!' : isNew ? 'NEW ENTRY' : 'NEW BEST';
+  $('catchStamp').classList.toggle('goldstamp', (newVar && v === 'gold') || (S.pearl && !isNew));
   $('catchNo').textContent = f.junk ? 'Odds and Ends' : 'No. ' + String(f.id).padStart(3, '0');
   const per = periodOf(hourOf(SAVE.gm));
   $('catchWhen').textContent = per[0].toUpperCase() + per.slice(1) + ' · ' + (SAVE.weather === 'rain' ? 'Rain' : 'Clear');
-  fillSketch($('catchSketch'), f, '[Drawing of ' + f.name + ' coming soon]', gold);
-  $('catchName').textContent = (gold ? 'Golden ' : '') + f.name;
+  fillSketch($('catchSketch'), f, '[Drawing of ' + f.name + ' coming soon]', v);
+  $('catchName').textContent = variantName(f, v);
   $('catchFacts').innerHTML = '';
-  (f.junk ? [f.map ? 'Map ' + SAVE.mapPieces + '/4' : size + ' cm'] : [f.fight === 'kraken' ? 'Too big to measure' : size + ' cm', f.rarity, f.id === DAILY ? "Today's fish" : null, S.perfectCatch ? 'Perfect cast' : null]).filter(Boolean).forEach(t => {
+  (f.junk ? [f.map ? 'Map ' + SAVE.mapPieces + '/4' : f.postcard ? 'Postcard ' + SAVE.postcards + '/' + POSTCARDS.length : size + ' cm', f.oyster && S.pearl ? 'Pearl!' : null] : [f.fight === 'kraken' ? 'Too big to measure' : size + ' cm', v === 'tiny' ? 'Let go' : f.rarity, f.id === DAILY ? "Today's fish" : null, S.perfectCatch ? 'Perfect cast' : null]).filter(Boolean).forEach(t => {
     const s = document.createElement('span'); s.textContent = t; $('catchFacts').appendChild(s);
   });
-  $('catchNote').textContent = newGold && !isNew ? 'A golden one. Walter could not stop staring at it.' : isNew ? f.note : 'Caught ' + SAVE.found[f.id].n + ' times now. Best: ' + SAVE.found[f.id].best + ' cm.';
+  $('catchNote').textContent = V && (newVar ? (v !== 'gold' || !isNew) : true) ? (newVar ? V.first : V.again) : isNew ? f.note : 'Caught ' + SAVE.found[f.id].n + ' times now. Best: ' + SAVE.found[f.id].best + ' cm.';
   if (junkNote) $('catchNote').textContent = junkNote;
   else if (f.junk && !isNew) $('catchNote').textContent = 'Another one. Found ' + SAVE.found[f.id].n + ' times now.';
   $('catchOverlay').hidden = false;
@@ -2319,7 +2414,7 @@ function renderJournal() {
   const n = FISH.filter(f => isFish(f) && SAVE.found[f.id]).length;
   const odds = FISH.filter(f => f.junk && SAVE.found[f.id]).length;
   const daily = FISH.find(f => f.id === DAILY);
-  $('journalSub').textContent = n + ' of ' + FISH_COUNT() + ' fish' + (odds ? ' · ' + odds + ' odds and ends' : '') + ' · today\'s fish: ' + (SAVE.found[daily.id] ? daily.name : daily.hint);
+  $('journalSub').textContent = n + ' of ' + FISH_COUNT() + ' fish' + (odds ? ' · ' + odds + ' odds and ends' : '') + (SAVE.pearls ? ' · ' + SAVE.pearls + (SAVE.pearls === 1 ? ' pearl' : ' pearls') : '') + ' · today\'s fish: ' + (SAVE.found[daily.id] ? daily.name : daily.hint);
   const grid = $('journalGrid'); grid.innerHTML = '';
   $('journalDetail').hidden = true; grid.hidden = false;
   for (const f of FISH) {
@@ -2331,7 +2426,12 @@ function renderJournal() {
       b.innerHTML = '<div class="mini">sketch</div><span class="no"></span><span class="nm"></span>';
       b.querySelector('.no').textContent = no; b.querySelector('.nm').textContent = f.name;
       fillSketch(b.querySelector('.mini'), f, 'sketch');
-      if (rec.gold) { const g = document.createElement('span'); g.className = 'goldmark'; g.textContent = '★'; g.title = 'Golden one caught'; b.appendChild(g); }
+      const marks = Object.keys(VARIANT).filter(k => rec[k]);
+      if (marks.length) {
+        const g = document.createElement('span'); g.className = 'goldmark'; g.title = marks.map(k => VARIANT[k].title).join(', ');
+        marks.forEach(k => { const m = document.createElement('span'); m.textContent = VARIANT[k].mark; if (k !== 'gold') m.className = 'vm'; g.appendChild(m); });
+        b.appendChild(g);
+      }
       b.addEventListener('click', () => showDetail(f.id));
       grid.appendChild(b);
     } else {
@@ -2351,17 +2451,21 @@ function showDetail(id) {
   fillSketch(add('div', 'sketch'), f, '[Drawing of ' + f.name + ' coming soon]');
   add('h2', 'fishname', f.name);
   const facts = add('div', 'facts');
-  (f.junk ? [(f.map ? 'Pieces ' + (SAVE.mapPieces || 0) + ' of 4' : null), 'Found ' + rec.n + (rec.n === 1 ? ' time' : ' times'), 'First ' + rec.first].filter(Boolean) : [f.fight === 'kraken' ? 'Best: enormous' : 'Best ' + rec.best + ' cm', 'Caught ' + rec.n + (rec.n === 1 ? ' time' : ' times'), 'First ' + rec.first]).forEach(t => { const s = document.createElement('span'); s.textContent = t; facts.appendChild(s); });
+  (f.junk ? [(f.map ? 'Pieces ' + (SAVE.mapPieces || 0) + ' of 4' : null), (f.postcard ? 'Postcards ' + (SAVE.postcards || 0) + ' of ' + POSTCARDS.length : null), (f.oyster ? 'Pearls ' + (SAVE.pearls || 0) : null), 'Found ' + rec.n + (rec.n === 1 ? ' time' : ' times'), 'First ' + rec.first].filter(Boolean) : [f.fight === 'kraken' ? 'Best: enormous' : 'Best ' + rec.best + ' cm', 'Caught ' + rec.n + (rec.n === 1 ? ' time' : ' times'), 'First ' + rec.first]).forEach(t => { const s = document.createElement('span'); s.textContent = t; facts.appendChild(s); });
   add('p', 'note', f.note);
   if (f.id === 101 && SAVE.bottleNote) add('p', 'note', 'Latest note: "' + SAVE.bottleNote + '"');
   if (f.map && (SAVE.mapPieces || 0) >= 4) add('p', 'note', 'The X is far out past the pier. Cast far.');
+  if (f.postcard) POSTCARDS.slice(0, SAVE.postcards || 0).forEach(pc => add('p', 'note', pc.place + ': "' + pc.line + '"'));
   if (f.junk) { $('journalGrid').hidden = true; el.hidden = false; return; }
   add('div', 'fightnote', 'How it fights: ' + FIGHTS[f.fight || 'steady']);
-  if (rec.gold) {
-    add('div', 'small', 'Golden one · caught ' + rec.gold + (rec.gold === 1 ? ' time' : ' times')).style.color = '#a87a12';
-    const g = add('div', 'sketch small-sketch');
-    fillSketch(g, f, '', true);
-  } else add('div', 'small', 'Golden one: not yet. Watch for a gold shimmer in the water.').style.color = 'var(--muted)';
+  // the rare versions: a small painting once caught, a hint until then
+  if (f.fight !== 'kraken') for (const k of Object.keys(VARIANT)) {
+    const V = VARIANT[k], row = add('div', 'varrow');
+    if (rec[k]) {
+      const sk = document.createElement('div'); sk.className = 'sketch'; row.appendChild(sk); fillSketch(sk, f, '', k);
+      const t = document.createElement('div'); t.className = 'small'; t.textContent = variantName(f, k) + ' · caught ' + rec[k] + (rec[k] === 1 ? ' time' : ' times'); t.style.color = k === 'gold' ? '#a87a12' : 'var(--deep)'; row.appendChild(t);
+    } else { const t = document.createElement('div'); t.className = 'small'; t.textContent = V.word + ' one: not yet. ' + V.hint; t.style.color = 'var(--muted)'; row.appendChild(t); }
+  }
   $('journalGrid').hidden = true; el.hidden = false;
 }
 $('journalBtn').addEventListener('click', () => openJournal());
@@ -2380,6 +2484,9 @@ if (new URLSearchParams(location.search).has('debug')) {
   mk('frenzy', () => { FRENZY.next = 0; FRENZY.until = 0; });
   mk('gull', () => { S.lastSteal = { id: 1, name: 'Pier Perch', prev: SAVE.found[1] ? JSON.parse(JSON.stringify(SAVE.found[1])) : { n: 1, best: 20, first: todayISO() } }; const r = Math.random; Math.random = () => 0; maybeThief(); Math.random = r; });
   mk('boat', () => { BOAT.start = null; BOAT.next = 0; });
+  mk('tuxedo', () => { FORCE.variant = FORCE.variant === 'tux' ? null : 'tux'; });
+  mk('tiny', () => { FORCE.variant = FORCE.variant === 'tiny' ? null : 'tiny'; });
+  mk('find', () => { const ids = [107, 108, 109, 110, 111, 112]; FORCE.fish = ids[(ids.indexOf(FORCE.fish) + 1) % ids.length]; flash('Next catch: ' + FISH.find(f => f.id === FORCE.fish).name, 2); });
   mk('reset', () => { SAVE = freshSave(); persist(); updateFound(); });
 }
 
@@ -2414,7 +2521,7 @@ requestAnimationFrame(frame);
 
 /* ---------- Playtest hooks ---------- */
 window.__tb = {
-  S, TUNE, FISH,
+  S, TUNE, FISH, FORCE, VARIANT,
   get save() { return SAVE; },
   press(wx, wy) { introSkip(); press(wx, wy); }, release,   // a bot's first tap must cast, not just skip the walk-in
   setHour(hh) { setClockHour(hh); SAVE.gm = clockGm(); },

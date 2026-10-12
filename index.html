@@ -1007,6 +1007,11 @@ const ART = {
   body: loadImg('art/cat-body.webp'), head: loadImg('art/cat-head.webp'), earB: loadImg('art/cat-ear-back.webp'), earF: loadImg('art/cat-ear-front.webp'),
   tail1: loadImg('art/cat-tail-1.webp'), tail2: loadImg('art/cat-tail-2.webp'), tail3: loadImg('art/cat-tail-3.webp'),
 };
+// Walking Walter (tools/build-walk.py): body, tail and four legs cut from Shauna's walk painting. The legs
+// swing on hip and shoulder pivots, the tail sways. Layers are 404 x 336; feet on row 333; the hat centre
+// (311, 69) is lined up with the sitting puppet's hat (216, 74) when he sits down.
+for (const f of ['body', 'tail', 'leg-back-near', 'leg-back-far', 'leg-front-near', 'leg-front-far']) ART['walk-' + f] = loadImg('art/walk-' + f + '.webp');
+const WALKP = { k: 0.04134, feet: 333, hat: [311, 69], legBN: [101, 231], legBF: [169, 238], legFN: [278, 261], legFF: [249, 256], tail: [123, 187], swing: 24 };
 // Expression heads: the same head cut from Shauna's face paintings (tools/build-faces.py). One per
 // feeling; the plain head is the calm face. FACE_FOR maps a mood (see mood()) to a painting.
 const FACES = ['happy', 'proud', 'surprised', 'unimpressed', 'sad', 'grumpy', 'sleepy'];
@@ -1027,7 +1032,7 @@ PIER.x = 108 - PIER.endCol * PIER.k; PIER.y = 86 - PIER.deckRow * PIER.k;
 const LAMP = { x: 86.8, h: 30, glass: [63, 115] };          // glass = lantern centre in image pixels
 const BUCKET = { x: 64, h: 8.5 };
 // Cat layers are 393 x 406. Feet at row 403 rest on the deck; the paw (378, 208) holds the rod.
-const CATP = { x: 96.6, k: 16 / 406, feet: 403, paw: [378, 208], eye: [265, 95],
+const CATP = { x: 96.6, k: 16 / 406, feet: 403, paw: [378, 208], eye: [265, 95], hat: [216, 74],
   earB: [211, 66], earF: [249, 36], head: [234, 153], tail: [124, 364], tailJ1: [74, 292], tailJ2: [81, 223] };
 CATP.y = 86 - CATP.feet * CATP.k;
 function lampGlass() { const k = LAMP.h / ART.lamp.naturalHeight; return [LAMP.x + LAMP.glass[0] * k, 86 - LAMP.h + LAMP.glass[1] * k]; }
@@ -1117,20 +1122,22 @@ function drawEyeMood(md, col) {
 const CATANIM = { last: 0, head: 0, amp: 1, speed: 1, flickAt: 6, flick: -1, glanceAt: 4, glance: -1 };
 function easeTo(cur, target, rate, dt) { return cur + (target - cur) * (1 - Math.exp(-rate * dt)); }
 /* ---------- Walk-in: Walter comes out along the pier at the start of a visit ----------
-   The rod leans on the lamp post while he walks; he settles at the end and picks it up. For now the
-   sitting puppet waddles (tilt and bob per step); the walking paintings and leg layers replace that.
-   Any tap skips to the end. With reduced motion there is no walk, he is just there. */
+   The rod leans on the lamp post while he walks (the painted walker, legs swinging); at the end he
+   cross-fades into the sitting puppet and picks the rod up. Any tap skips to the end. With reduced motion there is no walk, he is just there. */
 const INTRO = { phase: 'off', t: 0, x: 0, from: 0 };   // phase: off | wait | walk | sit | rod | done
-const WALK = { speed: 26, step: 2.6, sit: 0.45, rod: 0.55 };   // world px per second, steps per second, seconds
+const WALK = { speed: 24, step: 2.3, sit: 0.5, rod: 0.55 };   // world px per second, steps per second, seconds
+// where the walker's left edge ends up: his hat over the sitting puppet's hat
+const walkEnd = () => CATP.x + CATP.hat[0] * CATP.k - WALKP.hat[0] * WALKP.k;
+const walkStart = () => Math.min(OX - 20, walkEnd() - 30);
 function introStart() { if (reduceMotion) return; INTRO.phase = 'wait'; INTRO.t = 0; }
-function introGo() { if (INTRO.phase === 'wait') { INTRO.phase = 'walk'; INTRO.t = 0; INTRO.from = Math.min(OX - 24, CATP.x - 30); INTRO.x = INTRO.from; } }
-function introSkip() { if (INTRO.phase !== 'off' && INTRO.phase !== 'done') { INTRO.phase = 'done'; INTRO.x = CATP.x; } }
+function introGo() { if (INTRO.phase === 'wait') { INTRO.phase = 'walk'; INTRO.t = 0; INTRO.from = walkStart(); INTRO.x = INTRO.from; } }
+function introSkip() { if (INTRO.phase !== 'off' && INTRO.phase !== 'done') { INTRO.phase = 'done'; INTRO.x = walkEnd(); } }
 const introOn = () => INTRO.phase === 'wait' || INTRO.phase === 'walk' || INTRO.phase === 'sit' || INTRO.phase === 'rod';
 function introUpdate(dt) {
   if (!introOn()) return;
   INTRO.t += dt;
-  if (INTRO.phase === 'wait') { INTRO.x = Math.min(OX - 24, CATP.x - 30); INTRO.from = INTRO.x; }
-  else if (INTRO.phase === 'walk') { INTRO.x = Math.min(CATP.x, INTRO.x + WALK.speed * dt); if (INTRO.x >= CATP.x) { INTRO.phase = 'sit'; INTRO.t = 0; } }
+  if (INTRO.phase === 'wait') { INTRO.x = walkStart(); INTRO.from = INTRO.x; }
+  else if (INTRO.phase === 'walk') { INTRO.x = Math.min(walkEnd(), INTRO.x + WALK.speed * dt); if (INTRO.x >= walkEnd()) { INTRO.phase = 'sit'; INTRO.t = 0; } }
   else if (INTRO.phase === 'sit') { if (INTRO.t >= WALK.sit) { INTRO.phase = 'rod'; INTRO.t = 0; } }
   else if (INTRO.phase === 'rod') { if (INTRO.t >= WALK.rod) INTRO.phase = 'done'; }
 }
@@ -1141,6 +1148,26 @@ function introRod(hand, tip) {
   if (INTRO.phase === 'rod') { const u = 1 - Math.pow(1 - clamp(INTRO.t / WALK.rod, 0, 1), 3);
     return [{ x: lerp(lean.hx, hand.x, u), y: lerp(lean.hy, hand.y, u) }, { x: lerp(lean.tx, tip.x, u), y: lerp(lean.ty, tip.y, u) - Math.sin(u * Math.PI) * 6 }]; }
   return [hand, tip];
+}
+
+// the painted walker at left edge x: legs swing on their pivots (the painting is one extreme of the
+// stride), the tail sways, the body bobs a little with each step
+function drawWalker(P, x, alpha, ph) {
+  const k = WALKP.k, col = sceneTint(P);
+  const u = (1 - Math.cos(ph)) / 2, A = WALKP.swing;          // 0 = the painted pose, 1 = the other extreme
+  const bob = reduceMotion ? 0 : -Math.abs(Math.sin(ph)) * 0.7;
+  const turn = (piv, deg) => { ctx.translate(piv[0], piv[1]); ctx.rotate(deg * Math.PI / 180); ctx.translate(-piv[0], -piv[1]); };
+  const d = key => ctx.drawImage(tinted('walk-' + key, ART['walk-' + key], col), 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.save(); ctx.globalAlpha = alpha;
+  ctx.translate(x, 86 - WALKP.feet * k + bob); ctx.scale(k, k);
+  ctx.save(); turn(WALKP.legBF, u * A); d('leg-back-far'); ctx.restore();
+  ctx.save(); turn(WALKP.legFF, -u * A); d('leg-front-far'); ctx.restore();
+  ctx.save(); turn(WALKP.tail, Math.sin(ph * 0.5) * 5); d('tail'); ctx.restore();
+  d('body');
+  ctx.save(); turn(WALKP.legBN, -u * A); d('leg-back-near'); ctx.restore();
+  ctx.save(); turn(WALKP.legFN, u * A); d('leg-front-near'); ctx.restore();
+  ctx.restore();
 }
 
 function drawPaintedCat(P) {
@@ -1175,8 +1202,6 @@ function drawPaintedCat(P) {
   if (S.state === 'caught') headT = -6;
   if (THIEF.phase === 'perched' || THIEF.phase === 'arriving') headT = -9;
   if (S.state === 'landing') headT = S.fish && (S.fish.junk || S.fish.refuse) ? 5 : -7;
-  const walking = INTRO.phase === 'walk' || INTRO.phase === 'wait';
-  if (walking) headT = -1 + (still ? 0 : Math.sin(INTRO.t * WALK.step * Math.PI * 2) * 1.5);
   if (md === 'happy') headT = -8;
   else if (md === 'proud') headT = -11;
   else if (md === 'shock') headT = -7;
@@ -1191,8 +1216,8 @@ function drawPaintedCat(P) {
   // stands up and puffs on a bite, lashes while reeling
   const lash = S.state === 'reeling' || md === 'angry', puff = pose.puff || md === 'shock';
   const droop = md === 'sad' || md === 'snapped' || md === 'sleepy';
-  A.amp = easeTo(A.amp, walking ? 1.6 : puff ? 0.5 : md === 'angry' ? 2.6 : lash ? 1.7 : droop ? 0.3 : md === 'happy' || md === 'proud' ? 1.4 : 1, 4, dt);
-  A.speed = easeTo(A.speed, walking ? 2.2 : puff ? 3 : md === 'angry' ? 3.6 : lash ? 2.4 : droop ? 0.5 : md === 'happy' || md === 'proud' ? 1.8 : 1, 3, dt);
+  A.amp = easeTo(A.amp, puff ? 0.5 : md === 'angry' ? 2.6 : lash ? 1.7 : droop ? 0.3 : md === 'happy' || md === 'proud' ? 1.4 : 1, 4, dt);
+  A.speed = easeTo(A.speed, puff ? 3 : md === 'angry' ? 3.6 : lash ? 2.4 : droop ? 0.5 : md === 'happy' || md === 'proud' ? 1.8 : 1, 3, dt);
   A.phase = (A.phase || 0) + dt * 1.7 * A.speed;
   if (!still && A.flick < 0 && now > A.flickAt) { A.flick = now; A.flickAt = now + 4 + Math.random() * 5; }
   const fp = A.flick > 0 ? (now - A.flick) / 0.7 : 2;
@@ -1214,17 +1239,19 @@ function drawPaintedCat(P) {
     if ((md === 'happy' && me < 0.7) || (md === 'proud' && me < 1.05)) hop = -Math.abs(Math.sin(Math.PI * me / 0.35)) * 1.6;
     else if (md === 'shock' && me < 0.45) hop = -Math.sin(Math.PI * me / 0.45) * 2.6;
   }
-  // the walk-in: he slides along the deck from the left with a waddle, then settles with a small bounce
-  let walkDx = 0, waddle = 0, bob = 0;
-  if (introOn()) {
-    walkDx = INTRO.x - CATP.x;
-    if (INTRO.phase === 'walk' && !still) { const ph = INTRO.t * WALK.step * Math.PI * 2; waddle = Math.sin(ph) * 4; bob = -Math.abs(Math.sin(ph)) * 1.1; }
-    if (INTRO.phase === 'sit' && !still) bob = -Math.sin(Math.PI * clamp(INTRO.t / WALK.sit, 0, 1)) * 0.8;
+  // the walk-in: the painted walker comes along the deck; when he reaches his spot he cross-fades
+  // into the sitting puppet (hats lined up), then the rod comes up off the lamp post
+  let sitAlpha = 1;
+  if (INTRO.phase === 'wait' || INTRO.phase === 'walk') {
+    if (INTRO.phase === 'walk') drawWalker(P, INTRO.x, 1, INTRO.t * WALK.step * Math.PI * 2);
+    HAND.x = CATP.x + CATP.paw[0] * k; HAND.y = CATP.y + CATP.paw[1] * k;
+    return;
   }
+  if (INTRO.phase === 'sit') { sitAlpha = clamp(INTRO.t / WALK.sit, 0, 1); drawWalker(P, INTRO.x, 1 - sitAlpha, Math.PI * 2 * Math.round(INTRO.from)); }
   ctx.imageSmoothingEnabled = true;
   ctx.save();
-  ctx.translate(walkDx, hop + bob);
-  if (waddle) { ctx.translate(feetX, feetY); ctx.rotate(waddle * Math.PI / 180); ctx.translate(-feetX, -feetY); }
+  ctx.globalAlpha = sitAlpha;
+  ctx.translate(0, hop);
   // squash around the feet
   ctx.translate(feetX, feetY); ctx.scale(sx, sy); ctx.translate(-feetX, -feetY);
   ctx.translate(CATP.x, CATP.y); ctx.scale(k, k);
@@ -1262,8 +1289,8 @@ function drawPaintedCat(P) {
   rig(paint);
   ctx.restore();
   // the rod sits in the paw, wherever the squash put it
-  HAND.x = feetX + (CATP.x + CATP.paw[0] * k - feetX) * sx + walkDx;
-  HAND.y = feetY + (CATP.y + CATP.paw[1] * k - feetY) * sy + hop + bob;
+  HAND.x = feetX + (CATP.x + CATP.paw[0] * k - feetX) * sx;
+  HAND.y = feetY + (CATP.y + CATP.paw[1] * k - feetY) * sy + hop;
   if (!introOn()) drawEmote(P, CATP.x + 300 * k, CATP.y - 1.5 + hop);
   // warm lamplight spilling onto the cat and the deck at night
   const lit = clamp(P.glow / 0.2, 0, 1);
@@ -2263,7 +2290,7 @@ requestAnimationFrame(frame);
 window.__tb = {
   S, TUNE, FISH,
   get save() { return SAVE; },
-  press, release,
+  press(wx, wy) { introSkip(); press(wx, wy); }, release,   // a bot's first tap must cast, not just skip the walk-in
   setHour(hh) { setClockHour(hh); SAVE.gm = clockGm(); },
   setWeather(w) { SAVE.weather = w; },
   reset() { SAVE = freshSave(); persist(); updateFound(); },

@@ -32,7 +32,9 @@ body {
   -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: none;
   -webkit-tap-highlight-color: transparent;
 }
-canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 0.6s ease; }
+canvas.ready { opacity: 1; }   /* the scene fades in once every painting has loaded, so the pixel stand-ins never flash */
+@media (prefers-reduced-motion: reduce) { canvas { transition: none; } }
 button { font-family: inherit; color: var(--ink); cursor: pointer; pointer-events: auto; }
 button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 
@@ -1414,8 +1416,12 @@ if (new URLSearchParams(location.search).has('debug')) {
 
 /* ---------- Loop ---------- */
 let last = performance.now(), saveTimer = 0;
+function allArtReady() { return sceneReady() && imgReady(SKY_DAY) && imgReady(SKY_NIGHT) && farReady(); }
+let shown = false;
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  // reveal the scene when the paintings are in (or after 5 s on a very slow connection)
+  if (!shown && (allArtReady() || now > 5000)) { shown = true; cv.classList.add('ready'); }
   const paused = !$('journal').hidden;
   if (!paused) update(dt);
   draw();

@@ -777,6 +777,12 @@ function update(dt) {
       break;
     case 'reeling': {
       const f = S.fish;
+      if (S.jump) {
+        // mid-leap the fight pauses: the line eases back toward the green, nothing snaps or slips
+        const zc = (sweetZone()[0] + sweetZone()[1]) / 2;
+        S.tension = lerp(S.tension, zc, Math.min(1, dt * 6)); S.slack = 0; S.surgeLeft = 0;
+        break;
+      }
       const str = f.str * (1 - 0.5 * Math.min(1, S.t / TUNE.tireTime));   // fish tire as the fight goes on
       const zone = sweetZone();
       const sweet = S.tension >= zone[0] && S.tension <= zone[1];
@@ -1374,16 +1380,25 @@ function jumpUpdate(dt) {
   S.jump.t += dt;
   if (S.jump.t > 0.8) {
     if (S.jump.hit) { S.dist = Math.max(0.5, S.dist - S.startDist * 0.12); flash('Hook set!', 1.1); SFX.hookset(); }
-    else { S.dist = Math.min(S.startDist * 1.25, S.dist + S.startDist * 0.15); flash('It shook loose a little. Tap when it jumps!', 1.6); }
+    else { S.dist = Math.min(S.startDist, S.dist + S.startDist * 0.08); flash('It shook loose a little. Tap when it jumps!', 1.6); }
     splash(S.bob.x, 102, 5); SFX.splash(5);
+    // land softly: tension mid-green, and give the player a beat before the next lunge or surge
+    const z = sweetZone(); S.tension = (z[0] + z[1]) / 2; S.slack = 0; S.surgeLeft = 0;
+    S.surgeIn = Math.max(S.surgeIn, 1.2);
+    const F = S.fight; if (F && F.until !== undefined && F.until - F.t < 1.2) F.until = F.t + 1.2;
     S.jump = null; S.nextJump = S.t + rand(4, 7);
   }
 }
+// where the leaping fish is right now (the line ties to it)
+function jumpPos() {
+  const k = clamp(S.jump.t / 0.8, 0, 1);
+  return { x: S.bob.x, y: 101 - Math.sin(k * Math.PI) * 10, rot: -0.8 + k * 1.6 };
+}
 function drawJump(P) {
   if (!S.jump) return;
-  const f = S.fish, k = clamp(S.jump.t / 0.8, 0, 1), im = leapImg(f);
-  const len = clamp(f.size[1] / 6, 8, 15), y = 101 - Math.sin(k * Math.PI) * 10;
-  ctx.save(); ctx.translate(S.bob.x, y); ctx.rotate(-0.8 + k * 1.6);
+  const f = S.fish, im = leapImg(f), jp = jumpPos();
+  const len = clamp(f.size[1] / 6, 8, 15);
+  ctx.save(); ctx.translate(jp.x, jp.y); ctx.rotate(jp.rot);
   if (im && imgReady(im)) { const h = len * im.naturalHeight / im.naturalWidth; ctx.drawImage(tinted('leap' + f.id, im, sceneTint(P)), -len / 2, -h / 2, len, h); }
   else { ctx.fillStyle = '#3d4a5c'; ctx.beginPath(); ctx.ellipse(0, 0, len / 2, len / 6, 0, 0, 7); ctx.fill(); }
   ctx.restore();
@@ -1643,6 +1658,7 @@ function draw() {
       if (S.t - S.lastNibble < 0.25) by += 1.2;
     }
     if (S.state === 'bite') by = 104 + (reduceMotion ? 0 : Math.sin(S.t * 30) * 0.6);
+    if (S.state === 'reeling' && S.jump) { const jp = jumpPos(); bx = jp.x; by = jp.y; }
   } else if (S.state === 'landing' && S.fish && S.fish.fight !== 'kraken') { [bx, by] = leapPos(tip); }
   else if (S.state === 'landing') { bx = S.bob.x; by = 102; }
   else { bx = tip.x; by = tip.y + 8; }
@@ -1658,7 +1674,7 @@ function draw() {
     ctx.fillStyle = '#d8433a'; ctx.beginPath(); ctx.arc(bx, by, 1.4, Math.PI, 2 * Math.PI); ctx.fill();
     ctx.strokeStyle = '#5a3a2a'; ctx.lineWidth = 0.3; ctx.beginPath(); ctx.moveTo(bx, by - 1.4); ctx.lineTo(bx, by - 2.6); ctx.stroke();
   }
-  if (inWater && S.state !== 'flying') {
+  if (inWater && S.state !== 'flying' && !S.jump) {
     const rp = reduceMotion ? 0 : (S.t * 6) % 4;
     ctx.strokeStyle = P.wave; ctx.lineWidth = 0.4; ctx.globalAlpha = 0.8 - rp * 0.15;
     ctx.beginPath(); ctx.ellipse(bx, by + 1.2, 3.5 + rp * 1.5, 0.6 + rp * 0.15, 0, 0, 7); ctx.stroke(); ctx.globalAlpha = 1;

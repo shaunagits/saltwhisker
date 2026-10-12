@@ -1291,8 +1291,23 @@ function sndFrame(now) {
 }
 document.addEventListener('visibilitychange', () => { if (SND.ctx) document.hidden ? SND.ctx.suspend() : (SAVE.sound && SND.ctx.resume()); });
 
-/* ---------- Gulls (drawn in code) ---------- */
-function drawGull(x, y, flap, s = 1, facing = 1, carrying = false) {
+/* ---------- Gulls: Shauna's paintings (both face left), with the old code drawing as a fallback while they load ---------- */
+const GULL = { perched: loadImg('art/gull-perched.webp'), flying: loadImg('art/gull-flying.webp'), feetX: 0.42 };
+function drawGull(x, y, flap, s = 1, facing = 1, carrying = false, perched = false, tint = '#ffffff') {
+  const im = perched ? GULL.perched : GULL.flying;
+  if (imgReady(im)) {
+    // perched: feet stand on (x, y); flying: centred on (x, y), gliding with a slight bob and tilt
+    const w = (perched ? 9 : 12) * s, h = w * im.naturalHeight / im.naturalWidth;
+    ctx.save(); ctx.translate(x, y);
+    if (!perched) ctx.rotate(-flap * 0.09 * facing);
+    ctx.scale(-facing, perched ? 1 : 1 - Math.abs(flap) * 0.08);
+    const ox = perched ? -w * GULL.feetX : -w / 2, oy = perched ? -h : -h / 2;
+    ctx.drawImage(tinted(perched ? 'gull-p' : 'gull-f', im, tint), ox, oy, w, h);
+    if (carrying) { ctx.fillStyle = mulHex('#9fb3c2', tint); ctx.beginPath(); ctx.ellipse(ox + w * 0.06, oy + h * 0.72, w * 0.09, w * 0.03, -0.4, 0, 7); ctx.fill(); }
+    ctx.restore();
+    return;
+  }
+  if (perched) y -= 1.1;
   ctx.save(); ctx.translate(x, y); ctx.scale(facing * s, s);
   ctx.fillStyle = '#f4f1ea'; ctx.beginPath(); ctx.ellipse(0, 0, 2.2, 0.9, 0, 0, 7); ctx.fill();
   ctx.beginPath(); ctx.arc(1.9, -0.5, 0.7, 0, 7); ctx.fill();
@@ -1317,7 +1332,7 @@ function drawFrenzy(P, now) {
     const dive = reduceMotion ? 0 : (cyc > 0.82 ? Math.sin((cyc - 0.82) / 0.18 * Math.PI) : 0);
     const a = now * 0.9 + i * 2.1;
     const x = FRENZY.x + Math.cos(a) * 9, y = lerp(76 + Math.sin(a) * 3, 96, dive);
-    drawGull(x, y, reduceMotion ? 0.3 : Math.sin(now * 9 + i) * 0.5, 0.9, Math.sin(a) > 0 ? -1 : 1);
+    drawGull(x, y, reduceMotion ? 0 : Math.sin(now * 9 + i) * 0.5, 0.62, Math.sin(a) > 0 ? -1 : 1, false, false, sceneTint(P));   // smaller: they are out over the water
     if (dive > 0.95 && Math.random() < 0.3) splash(x, 97, 2);
   }
   // little fish flicking at the surface
@@ -1327,7 +1342,7 @@ function drawFrenzy(P, now) {
 
 /* ---------- Seagull thief: lands on the lamp after a catch, steals the dinner points unless shooed ---------- */
 const THIEF = { phase: 'none', t: 0, pts: 0, made: false, x: 0, y: 0 };
-const PERCH = () => { const [gx] = lampGlass(); return [gx, 86 - LAMP.h - 0.8]; };
+const PERCH = () => { const [gx] = lampGlass(); return [gx, 86 - LAMP.h + 0.3]; };   // the lamp's top, where the gull's feet go
 function maybeThief() {
   const P = paletteAt(hourOf(SAVE.gm));
   if (!S.lastPts || !dinnerOpen(SAVE.gm) || P.gull < 0.5 || SAVE.weather === 'rain' || !sceneReady()) return;
@@ -1361,11 +1376,11 @@ function thiefUpdate(dt) {
 function drawThief(P, now) {
   if (THIEF.phase === 'none') return;
   const perched = THIEF.phase === 'perched';
-  const flap = perched ? 0 : (reduceMotion ? 0.3 : Math.sin(now * 12) * 0.6);
+  const flap = perched ? 0 : (reduceMotion ? 0 : Math.sin(now * 12) * 0.6);
   const hop = perched && !reduceMotion ? Math.abs(Math.sin(now * 5)) * 0.25 : 0;
   ctx.save(); ctx.globalAlpha = 1;
-  if (perched) { const pulse = 0.35 + 0.25 * Math.sin(now * 6); softGlow(THIEF.x, THIEF.y, 5, '255,240,200', reduceMotion ? 0.35 : pulse); }
-  drawGull(THIEF.x, THIEF.y - hop, flap, 1.15, THIEF.phase === 'leaving' ? -1 : (perched ? 1 : -1), THIEF.phase === 'leaving' && THIEF.stole);
+  if (perched) { const pulse = 0.35 + 0.25 * Math.sin(now * 6); softGlow(THIEF.x, THIEF.y - 4, 6, '255,240,200', reduceMotion ? 0.35 : pulse); }
+  drawGull(THIEF.x, THIEF.y - hop, flap, 1.15, THIEF.phase === 'leaving' ? -1 : (perched ? 1 : -1), THIEF.phase === 'leaving' && THIEF.stole, perched, sceneTint(P));
   ctx.restore();
 }
 

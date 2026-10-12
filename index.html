@@ -960,18 +960,18 @@ function drawClouds(P, now) {
 }
 // A little boat crosses far out on the horizon now and then (art/boat.webp), by day and at dusk.
 const BOAT_IMG = loadImg('art/boat.webp');
-const BOAT = { next: 25 + Math.random() * 60, start: -1, dir: 1, len: 90, w: 7 };
+const BOAT = { next: 25 + Math.random() * 60, start: null, dir: 1, len: 90, w: 7 };
 function drawBoat(P, now) {
   if (!imgReady(BOAT_IMG)) return;
   const daylight = nightSkyAmount(P) < 0.5 && SAVE.weather !== 'rain';
-  if (BOAT.start < 0) {
+  if (BOAT.start === null) {
     if (now < BOAT.next) return;
     if (!daylight || reduceMotion) { BOAT.next = now + 30; return; }
     BOAT.start = now; BOAT.dir = Math.random() < 0.5 ? 1 : -1; BOAT.len = rand(70, 110); BOAT.w = rand(5.5, 8);
   }
   const t = now - BOAT.start;
-  if (t > BOAT.len) { BOAT.start = -1; BOAT.next = now + rand(120, 300); return; }
-  // from one edge of the painting to the other, behind the coast on the right so it slips in and out of the haze
+  if (t > BOAT.len) { BOAT.start = null; BOAT.next = now + rand(120, 300); return; }
+  // from one edge of the painting to the other
   const a = SKY_RECT.x + 20, b = SKY_RECT.x + SKY_RECT.w - 10;
   const x = BOAT.dir > 0 ? lerp(a, b, t / BOAT.len) : lerp(b, a, t / BOAT.len);
   const w = BOAT.w, h = w * BOAT_IMG.naturalHeight / BOAT_IMG.naturalWidth, bob = reduceMotion ? 0 : Math.sin(now * 1.3) * 0.15;
@@ -1984,12 +1984,12 @@ function draw() {
     } else { R(150, 50 + y, 8, 2, P.sun); R(148, 52 + y, 12, 6, P.sun); R(150, 58 + y, 8, 2, P.sun); }
     ctx.globalAlpha = 1;
   }
-  // clouds drift
+  // code clouds drift, only until the painted clouds have loaded
   const drift = (performance.now() / 1000 * 0.8) % 260;
   const cloudC = rainy ? '#8a909c' : P.cloud;
   ctx.globalAlpha = rainy ? 1 : 0.92 * codeSky;
   ctx.fillStyle = cloudC;
-  [[26, 32, 22, 4, 31, 29, 11, 3], [114, 22, 18, 3, 118, 19, 8, 3], [170, 38, 14, 3, 0, 0, 0, 0], [-30, 26, 18, 3, -26, 23, 9, 3]].forEach(c => {
+  if (!CLOUDS.length) [[26, 32, 22, 4, 31, 29, 11, 3], [114, 22, 18, 3, 118, 19, 8, 3], [170, 38, 14, 3, 0, 0, 0, 0], [-30, 26, 18, 3, -26, 23, 9, 3]].forEach(c => {
     const off = ((c[0] + drift + 60) % 320) - 60 - c[0];
     const puff = (x, y, w, h) => { ctx.beginPath(); ctx.ellipse(x + w / 2, y + h / 2, w / 2, h * 0.8, 0, 0, 7); ctx.fill(); };
     puff(c[0] + off, c[1], c[2], c[3]); if (c[6]) puff(c[4] + off, c[5], c[6], c[7]);
@@ -2003,11 +2003,12 @@ function draw() {
     ctx.strokeStyle = '#4a4a58'; ctx.lineWidth = 0.45; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(gx, 42 - flap); ctx.quadraticCurveTo(gx + 2, 41.2, gx + 3.5, 43); ctx.quadraticCurveTo(gx + 5, 41.2, gx + 7, 42 - flap); ctx.stroke();
   }
-  // a boat far out, then the land in front of it
-  drawBoat(P, performance.now() / 1000);
   // land
   if (farReady()) drawFar(P);
   else { R(-200, 90, 244, 6, P.land); R(8, 86, 24, 4, P.land); R(160, 92, 240, 4, P.land); }
+  // a boat out at sea, in front of the coast (behind it, the headland and pier hid most of its trip);
+  // the sea drawn next covers its keel
+  drawBoat(P, performance.now() / 1000);
   // sea
   const seaG = ctx.createLinearGradient(0, 96, 0, 175);
   seaG.addColorStop(0, mixHex(P.sea, P.bot, 0.3)); seaG.addColorStop(0.2, P.sea); seaG.addColorStop(0.55, P.seaDeep); seaG.addColorStop(1, P.seaDeeper);
@@ -2378,7 +2379,7 @@ if (new URLSearchParams(location.search).has('debug')) {
   mk('tentacle', () => { CAMEO.next = 0; });
   mk('frenzy', () => { FRENZY.next = 0; FRENZY.until = 0; });
   mk('gull', () => { S.lastSteal = { id: 1, name: 'Pier Perch', prev: SAVE.found[1] ? JSON.parse(JSON.stringify(SAVE.found[1])) : { n: 1, best: 20, first: todayISO() } }; const r = Math.random; Math.random = () => 0; maybeThief(); Math.random = r; });
-  mk('boat', () => { BOAT.start = -1; BOAT.next = 0; });
+  mk('boat', () => { BOAT.start = null; BOAT.next = 0; });
   mk('reset', () => { SAVE = freshSave(); persist(); updateFound(); });
 }
 
@@ -2426,7 +2427,7 @@ window.__tb = {
   thief() { S.lastSteal = { id: 1, name: 'Pier Perch', prev: SAVE.found[1] ? JSON.parse(JSON.stringify(SAVE.found[1])) : { n: 1, best: 20, first: todayISO() } }; const r = Math.random; Math.random = () => 0; maybeThief(); Math.random = r; },
   hideTitle() { $('title').hidden = true; introSkip(); },
   intro: { go() { introStart(); introGo(); }, INTRO },
-  boat() { BOAT.start = -1; BOAT.next = 0; }, CLOUDS,
+  boat() { BOAT.start = null; BOAT.next = 0; }, CLOUDS,
 };
 </script>
 </body>

@@ -29,6 +29,18 @@ r2, g2, b2 = out[..., 0], out[..., 1], out[..., 2]
 tint = np.clip(np.minimum(r2, b2) - g2 - 12, 0, None) * (alpha < 0.98)
 out[..., 0] -= tint
 out[..., 2] -= tint
+# The painted rim around each cloud is pink-lavender, not pure magenta, so the key leaves a
+# purple halo. Clouds are white, cream and blue, never purple: fade out pinkish pixels that sit
+# near the edge, and keep red from climbing far above green anywhere.
+pink = np.clip(np.minimum(im[..., 0], im[..., 2]) - im[..., 1], 0, None)
+edge = np.asarray(Image.fromarray((alpha * 255).astype(np.uint8)).filter(ImageFilter.MinFilter(15))) < 250
+alpha = alpha * np.where(edge, np.clip(1 - (pink - 2) / 24, 0, 1), 1)
+# lavender at the rim (blue above green, red near green) turns into the clouds' own shadow blue,
+# same brightness; white and blue pixels are left alone
+lum = out.mean(axis=2, keepdims=True)
+w = (np.clip((out[..., 2] - out[..., 1]) / 20, 0, 1) * np.clip((out[..., 0] - out[..., 1] + 20) / 20, 0, 1) * edge)[..., None]
+out = out * (1 - w) + (lum + np.array([-30.0, -2.0, 32.0])) * w
+out[..., 0] = np.minimum(out[..., 0], out[..., 1] + 10)
 rgba = np.dstack([np.clip(out, 0, 255), alpha * 255]).astype(np.uint8)
 
 solid = np.asarray(Image.fromarray((alpha * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(6))) > 40

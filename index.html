@@ -104,6 +104,9 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
   background: rgba(8, 12, 32, 0.55); pointer-events: auto; padding: 16px; box-sizing: border-box;
 }
+@keyframes cardpop { from { transform: translateY(14px) scale(0.94); opacity: 0; } to { transform: none; opacity: 1; } }
+.overlay:not([hidden]) .card { animation: cardpop 0.32s ease-out; }
+@media (prefers-reduced-motion: reduce) { .overlay:not([hidden]) .card { animation: none; } }
 .card {
   position: relative; width: min(100%, 360px); max-height: 100%; overflow: auto; box-sizing: border-box;
   background: var(--paper); border: 1.5px solid var(--edge); border-radius: 20px; box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
@@ -515,6 +518,7 @@ function startWaiting() {
   }
   S.lastNibble = -9;
   S.fish = pickFish();
+  leapImg(S.fish);
   S.gold = !S.fish.junk && S.fish.fight !== 'kraken' && Math.random() < goldChance();
   const fromLeft = Math.random() < 0.5;
   const sz = clamp(S.fish.size[1] / 10, 4, 14);
@@ -646,8 +650,13 @@ function landFish() {
   }
   persist();
   S.catches++;
-  showCatch(f, size, isNew, isRecord && !f.junk, dinnerNote, gold, newGold, junkNote);
-  setState('caught');
+  // the fish leaps out of the water and dangles from the rod for a moment, then the card comes up
+  S.pending = [f, size, isNew, isRecord && !f.junk, dinnerNote, gold, newGold, junkNote];
+  S.landMsg = f.fight === 'kraken' ? 'THE KRAKEN! He is... waving?' : f.junk ? 'Oh. ' + (/^[aeiou]/i.test(f.name) ? 'An ' : 'A ') + f.name.toLowerCase() + '.'
+    : gold ? 'A golden ' + f.name + '!' : f.refuse ? 'Got... a ' + f.name + '. Hmm.' : 'Got it! ' + f.name + '!';
+  S.leapFrom = S.bob.x;
+  setState('landing');
+  splash(S.bob.x, 102, 10);
   S.shadow = null;
   updateFound();
 }
@@ -747,6 +756,9 @@ function update(dt) {
       else if (S.dist <= 0) landFish();
       break;
     }
+    case 'landing':
+      if (S.t > (S.fish && S.fish.fight === 'kraken' ? 2.4 : 1.7)) { showCatch(...S.pending); setState('caught'); }
+      break;
     case 'message':
       if (S.t > S.msgUntil) setState('idle');
       break;
@@ -796,7 +808,8 @@ function catPose() {
   const crouch = S.state === 'reeling' && (S.tension > 0.75 || S.surgeLeft > 0);
   const swish = !reduceMotion && Math.floor(performance.now() / 900) % 2 === 1;
   const kraken = S.state === 'reeling' && S.fish && S.fish.fight === 'kraken';
-  return { ears: nibble || bite || kraken, puff: bite || kraken, crouch, swish: swish && !bite };
+  const landing = S.state === 'landing', meh = landing && S.fish && (S.fish.junk || S.fish.refuse);
+  return { ears: nibble || bite || kraken || (landing && !meh), puff: bite || kraken || (landing && S.fish && S.fish.fight === 'kraken'), crouch, swish: swish && !bite };
 }
 function catPixels(pose) {
   // list of [x, y, w, color] in sprite space
@@ -1018,6 +1031,7 @@ function drawPaintedCat(P) {
   if (S.state === 'bite') headT = -4 + (still ? 0 : Math.sin(now * 40) * 1.2);
   if (S.state === 'reeling') headT = 6 + (S.surgeLeft > 0 && !still ? Math.sin(now * 35) * 1.5 : 0);
   if (S.state === 'caught') headT = -6;
+  if (S.state === 'landing') headT = S.fish && (S.fish.junk || S.fish.refuse) ? 5 : -7;
   A.head = still ? headT : easeTo(A.head, headT, S.state === 'bite' ? 18 : 6, dt);
 
   // tail: a travelling wave through three pieces, with an occasional flick of the tip;
@@ -1162,6 +1176,52 @@ function drawKrakenShadow(P) {
     else tentaclePath(bx, cy, 11 * grow + 3, sway, 2.6, (i % 2 ? -1 : 1) * (3.6 + Math.sin(sway) * 0.6));
   }
   ctx.globalAlpha = 1;
+}
+
+/* ---------- Landing a catch ---------- */
+const LEAP_IMG = {};
+function leapImg(f) {
+  if (!FISH_ART[f.id]) return null;
+  if (!LEAP_IMG[f.id]) LEAP_IMG[f.id] = loadImg('art/fish/' + FISH_ART[f.id] + '.webp');
+  return LEAP_IMG[f.id];
+}
+// where the fish is: an arc from the water up to the rod tip, then dangling there
+function leapPos(tip) {
+  const k = clamp(S.t / 0.85, 0, 1), e = 1 - (1 - k) * (1 - k);
+  const x = lerp(S.leapFrom, tip.x - 1, e), y = lerp(102, tip.y + 13, e) - Math.sin(k * Math.PI) * 14;
+  if (k < 1) return [x, y];
+  const w = reduceMotion ? 0 : Math.sin(S.t * 7) * 0.7 * Math.max(0, 1 - (S.t - 0.85));
+  return [tip.x - 1 + w, tip.y + 13];
+}
+function drawLanding(P, x, y) {
+  const f = S.fish; if (!f) return;
+  if (f.fight === 'kraken') {
+    // the Kraken does not come up: two tentacles rise at the bobber and wave goodbye
+    const e = clamp(S.t / 0.8, 0, 1) * clamp((2.4 - S.t) / 0.5, 0, 1), now = performance.now() / 1000;
+    ctx.save(); ctx.beginPath(); ctx.rect(-300, -300, 800, 397.4 + 4.6); ctx.clip();
+    for (let i = 0; i < 2; i++) {
+      const im = TENT[i]; if (!imgReady(im)) continue;
+      const wave = reduceMotion ? 0 : Math.sin(now * 4 + i * 2) * 0.25;
+      drawTentacleImg(tinted('tent' + i, im, sceneTint(P)), x - 5 + i * 10, 104 + 16 * (1 - e), 16, wave + (i ? 0.2 : -0.2), i === 1);
+    }
+    ctx.restore();
+    return;
+  }
+  const im = leapImg(f);
+  const len = clamp(f.size[1] / 6, 8, 15);
+  const k = clamp(S.t / 0.85, 0, 1);
+  const ang = k < 1 ? -0.9 + k * 1.4 : (reduceMotion ? 0.4 : 0.4 + Math.sin(S.t * 7) * 0.15 * Math.max(0, 1.6 - S.t));
+  ctx.save(); ctx.translate(x, y + len * 0.15); ctx.rotate(ang);
+  if (im && imgReady(im)) {
+    const h = len * im.naturalHeight / im.naturalWidth;
+    ctx.drawImage(tinted('leap' + f.id + (S.gold ? 'g' : ''), im, S.gold ? mulHex(sceneTint(P), '#ffd36a') : sceneTint(P)), -len * 0.15, -h / 2, len, h);
+  } else {
+    ctx.fillStyle = S.gold ? '#f2c14e' : '#3d4a5c';
+    ctx.beginPath(); ctx.ellipse(len * 0.35, 0, len / 2, len / 6, 0, 0, 7); ctx.fill();
+  }
+  ctx.restore();
+  // drips while it is in the air
+  if (k < 1 && !reduceMotion && Math.random() < 0.5) S.splashes.push({ x: x + rand(-1, 1), y: y + 1, vx: rand(-4, 4), vy: rand(0, 8), t: 0.2 });
 }
 
 /* ---------- Draw ---------- */
@@ -1325,14 +1385,17 @@ function draw() {
       if (S.t - S.lastNibble < 0.25) by += 1.2;
     }
     if (S.state === 'bite') by = 104 + (reduceMotion ? 0 : Math.sin(S.t * 30) * 0.6);
-  } else { bx = tip.x; by = tip.y + 8; }
+  } else if (S.state === 'landing' && S.fish && S.fish.fight !== 'kraken') { [bx, by] = leapPos(tip); }
+  else if (S.state === 'landing') { bx = S.bob.x; by = 102; }
+  else { bx = tip.x; by = tip.y + 8; }
   ctx.strokeStyle = S.state === 'reeling' && S.tension > sweetZone()[1] + 0.12 ? '#ff8a7a' : P.line;
   ctx.globalAlpha = 0.85; ctx.lineWidth = 0.4;
   ctx.beginPath(); ctx.moveTo(tip.x, tip.y);
   if (S.state === 'reeling' || S.state === 'bite') ctx.lineTo(bx, by);
   else ctx.quadraticCurveTo((tip.x + bx) / 2, Math.max(tip.y, by) + 4, bx, by);
   ctx.stroke(); ctx.globalAlpha = 1;
-  if (S.state !== 'reeling') {
+  if (S.state === 'landing') drawLanding(P, bx, by);
+  else if (S.state !== 'reeling') {
     ctx.fillStyle = '#f4f1ea'; ctx.beginPath(); ctx.arc(bx, by, 1.4, 0, Math.PI); ctx.fill();
     ctx.fillStyle = '#d8433a'; ctx.beginPath(); ctx.arc(bx, by, 1.4, Math.PI, 2 * Math.PI); ctx.fill();
     ctx.strokeStyle = '#5a3a2a'; ctx.lineWidth = 0.3; ctx.beginPath(); ctx.moveTo(bx, by - 1.4); ctx.lineTo(bx, by - 2.6); ctx.stroke();
@@ -1416,6 +1479,7 @@ function updateHud() {
     msg = S.slack > 0.6 ? 'Line is slack! Reel!' : S.fightMsg ? S.fightMsg : S.surgeLeft > 0 ? 'It is pulling! Ease off!' : S.tension > 0.82 ? 'Ease off!' : 'Hold to reel. Keep it in the green.';
   }
   else if (S.state === 'message') msg = ui.msg;
+  else if (S.state === 'landing') msg = S.landMsg;
   if (S.state === 'caught') msg = '';
   const m = $('msg');
   if (m.textContent !== msg) m.textContent = msg;
@@ -1445,10 +1509,12 @@ function showCatch(f, size, isNew, isRecord, dinnerNote, gold, newGold, junkNote
   if (dinnerNote === 'Dinner served!') $('catchNote').textContent += ' That makes dinner. ' + (SAVE.streak > 1 ? SAVE.streak + ' nights in a row.' : 'Purring.');
   $('catchOverlay').hidden = false;
   S.lastCatch = f.id;
-  setTimeout(() => $('keepFishing').focus(), 50);
+  S.cardAt = performance.now();
+  setTimeout(() => { if (!$('catchOverlay').hidden) $('keepFishing').focus(); }, 800);
 }
-$('keepFishing').addEventListener('click', () => { $('catchOverlay').hidden = true; setState('idle'); });
-$('catchToJournal').addEventListener('click', () => { $('catchOverlay').hidden = true; setState('idle'); openJournal(S.lastCatch); });
+const cardReady = () => performance.now() - (S.cardAt || 0) > 700;   // a finger still down from reeling should not dismiss the card
+$('keepFishing').addEventListener('click', () => { if (!cardReady()) return; $('catchOverlay').hidden = true; setState('idle'); });
+$('catchToJournal').addEventListener('click', () => { if (!cardReady()) return; $('catchOverlay').hidden = true; setState('idle'); openJournal(S.lastCatch); });
 
 /* ---------- Journal ---------- */
 function openJournal(detailId) {

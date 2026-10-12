@@ -270,6 +270,7 @@ const FISH = [
   { id: 13, name: 'Sunday Snapper',      time: 'any',   depth: 'any',  w: 4,   size: [25, 40],  str: 0.4,  rarity: 'Rare', fight: 'steady',      note: 'Only shows up on Sundays. Dressed for it. So was I.', hint: 'Sundays', sunday: true },
   { id: 14, name: 'Old Boot Bass',       time: 'dusk',  depth: 'far',  w: 0.6, size: [70, 100], str: 0.9,  rarity: 'Legendary', fight: 'heavy', note: 'Might be a boot. Did not eat.', hint: 'legendary', refuse: true },
   { id: 15, name: 'The Pier Ghost',      time: 'night', depth: 'far',  w: 0.4, size: [80, 120], str: 0.95, rarity: 'Legendary', fight: 'ghost', note: 'Nobody believes me. Not eating a ghost.', hint: 'legendary', weather: 'rain', refuse: true },
+  { id: 16, name: 'The Kraken',          time: 'night', depth: 'far',  w: 0.3, size: [400, 600], str: 0.95, rarity: 'Legendary', fight: 'kraken', note: 'Did not fit in the bucket. Let him go. He waved.', hint: 'legendary. Watch the water at night', refuse: true },
   // Odds and ends: not fish. Mixed into the journal with their own tag, counted apart from the fish.
   { id: 101, name: 'Message in a Bottle', time: 'any', depth: 'any', w: 1.2, size: [20, 30], str: 0.12, rarity: 'Odds and Ends', fight: 'junk', junk: true, refuse: true, note: 'Not dinner. There was a note inside, though.', hint: 'something bobbing out there' },
   { id: 102, name: 'Torn Map',            time: 'any', depth: 'any', w: 0.9, size: [14, 20], str: 0.1,  rarity: 'Odds and Ends', fight: 'junk', junk: true, refuse: true, map: true, note: 'Part of a map. The X is on another piece. Obviously.', hint: 'soggy paper, somewhere' },
@@ -309,6 +310,7 @@ const FIGHTS = {
   wriggle: 'Wriggles side to side. The tension swings.',
   heavy:   'No tricks. Just heavy.',
   ghost:   'Fades away mid-fight, then comes back.',
+  kraken:  'Three tentacles, three fights. The last one pulls hardest.',
   junk:    'Dead weight. Not a fish.',
 };
 // Rare golden versions of every fish: a gold shimmer in the water gives them away.
@@ -498,7 +500,7 @@ function startWaiting() {
   }
   S.lastNibble = -9;
   S.fish = pickFish();
-  S.gold = !S.fish.junk && Math.random() < goldChance();
+  S.gold = !S.fish.junk && S.fish.fight !== 'kraken' && Math.random() < goldChance();
   const fromLeft = Math.random() < 0.5;
   const sz = clamp(S.fish.size[1] / 10, 4, 14);
   S.shadow = { x: S.bob.x + (fromLeft ? -40 : 40), y: rand(112, 124), w: sz, show: false };
@@ -528,10 +530,19 @@ function surgeCycle(o, dt, str, every, len, pow) {
   if (S.surgeLeft > 0) { S.surgeLeft -= dt; o.surge = TUNE.surgePower * str * pow; }
 }
 function fightStep(dt, str) {
-  const F = S.fight, style = S.fish.fight || 'steady';
+  const F = S.fight;
+  let style = S.fish.fight || 'steady';
   const o = { surge: 0, pull: 1, reel: 1, up: 1, extra: 0, ghost: false, msg: '' };
   F.t += dt;
   const progress = 1 - S.dist / S.startDist;
+  // the Kraken: each third of the line is a new tentacle with its own trick, each one stronger
+  let round = 0;
+  if (style === 'kraken') {
+    round = progress < 1 / 3 ? 1 : progress < 2 / 3 ? 2 : 3;
+    if (F.round !== round) { F.round = round; F.phase = null; F.roundAt = F.t; if (round > 1) S.tension = Math.min(S.tension, 0.45); }
+    style = ['heavy', 'wriggle', 'grumble'][round - 1];
+    str = Math.min(1, str * (1 + 0.12 * round));
+  }
   const phase = (name, lo, hi) => { F.phase = name; F.until = F.t + rand(lo, hi); };
   const normal = [TUNE.surgeEvery, TUNE.surgeLength, 1];
   switch (style) {
@@ -570,11 +581,14 @@ function fightStep(dt, str) {
       break;
     default: surgeCycle(o, dt, str, ...normal);
   }
+  if (round && F.t - F.roundAt < 1.8) o.msg = round === 1 ? 'Something huge. Tentacle 1 of 3!' : round === 2 ? 'Another tentacle! 2 of 3.' : 'The last one. 3 of 3. Hold on!';
   S.fightMsg = o.msg; S.ghostOut = o.ghost;
   return o;
 }
 // The bottle's note: a tip about a fish Walter has not caught yet.
 function bottleMessage() {
+  const kraken = FISH.find(f => f.fight === 'kraken');
+  if (kraken && !SAVE.found[kraken.id] && Math.random() < 0.3) return 'Something with eight arms waits past the pier at night. Cast far. Bring friends.';
   const left = FISH.filter(f => isFish(f) && !SAVE.found[f.id] && f.rarity !== 'Legendary');
   if (!left.length) {
     const legend = FISH.find(f => f.rarity === 'Legendary' && !SAVE.found[f.id]);
@@ -605,6 +619,7 @@ function landFish() {
   let dinnerNote = '';
   const D = SAVE.dinner;
   if (f.junk) dinnerNote = 'Not food';
+  else if (f.fight === 'kraken') dinnerNote = 'Too big for the bucket';
   else if (f.refuse) dinnerNote = 'Won\'t eat it';
   else if (!dinnerOpen(SAVE.gm)) dinnerNote = 'Midnight snack';
   else if (D.done) dinnerNote = 'Extra helping';
@@ -765,7 +780,8 @@ function catPose() {
   const bite = S.state === 'bite';
   const crouch = S.state === 'reeling' && (S.tension > 0.75 || S.surgeLeft > 0);
   const swish = !reduceMotion && Math.floor(performance.now() / 900) % 2 === 1;
-  return { ears: nibble || bite, puff: bite, crouch, swish: swish && !bite };
+  const kraken = S.state === 'reeling' && S.fish && S.fish.fight === 'kraken';
+  return { ears: nibble || bite || kraken, puff: bite || kraken, crouch, swish: swish && !bite };
 }
 function catPixels(pose) {
   // list of [x, y, w, color] in sprite space
@@ -1056,6 +1072,58 @@ function drawPaintedCat(P) {
   }
 }
 
+/* ---------- Kraken ---------- */
+// A tapered, curling tentacle: base at (x, y), height h, sway in radians, drawn as one filled shape.
+function tentaclePath(x, y, h, sway, w, c = 2.4) {
+  const N = 14, L = [], Rr = [];
+  for (let i = 0; i <= N; i++) {
+    const t = i / N, curl = t * t * c;
+    const px = x + Math.sin(sway + t * 2) * 1.6 * t + Math.sin(curl) * t * h * 0.3;
+    const py = y - h * t + (1 - Math.cos(curl)) * t * h * 0.22;
+    const hw = (w * (1 - t) + 0.12) / 2;
+    L.push([px - hw, py]); Rr.push([px + hw, py]);
+  }
+  ctx.beginPath(); ctx.moveTo(L[0][0], L[0][1]);
+  for (const p of L) ctx.lineTo(p[0], p[1]);
+  for (let i = Rr.length - 1; i >= 0; i--) ctx.lineTo(Rr[i][0], Rr[i][1]);
+  ctx.closePath(); ctx.fill();
+}
+// Now and then at night, far out, a tentacle rises out of the sea and sinks again. Not catchable. Not explained.
+const CAMEO = { next: 40 + Math.random() * 50, start: -1, x: 150, len: 6 };
+function drawTentacleCameo(P) {
+  const now = performance.now() / 1000;
+  const night = P.stars > 0.6 && shown;
+  if (CAMEO.start < 0) {
+    if (now < CAMEO.next) return;
+    if (!night || reduceMotion) { CAMEO.next = now + 20; return; }
+    CAMEO.start = now; CAMEO.x = rand(Math.max(OX + 10, 116), Math.min(OX + VW - 10, 196));   // somewhere out at sea that this screen can see CAMEO.len = rand(5.5, 7);
+  }
+  const t = now - CAMEO.start;
+  if (t > CAMEO.len) { CAMEO.start = -1; CAMEO.next = now + rand(70, 160); return; }
+  const up = Math.min(1, t / 1.6, (CAMEO.len - t) / 1.6);
+  const e = up * up * (3 - 2 * up);
+  ctx.globalAlpha = 0.8; ctx.fillStyle = mixHex(P.seaDeeper, '#05070f', 0.45);
+  tentaclePath(CAMEO.x, 97.2, 9 * e, t * 1.4, 1.7);
+  ctx.globalAlpha = 0.5 * e; ctx.strokeStyle = P.wave; ctx.lineWidth = 0.3;
+  ctx.beginPath(); ctx.ellipse(CAMEO.x, 97.4, 2 + e * 1.5, 0.35, 0, 0, 7); ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+// During the fight: a huge dark shape under the bobber, tentacles curling up toward the surface.
+function drawKrakenShadow(P) {
+  const now = performance.now() / 1000, still = reduceMotion;
+  const grow = S.state === 'bite' ? 0.4 : 0.55 + 0.45 * clamp(1 - S.dist / S.startDist, 0, 1);
+  const cx = S.bob.x, cy = 114 + (1 - grow) * 8;
+  ctx.fillStyle = '#02040a';
+  ctx.globalAlpha = 0.34 * grow;
+  ctx.beginPath(); ctx.ellipse(cx, cy + 2, 18 * grow + 6, 6 * grow + 2, 0, 0, 7); ctx.fill();
+  ctx.globalAlpha = 0.42 * grow;
+  for (let i = 0; i < 5; i++) {
+    const bx = cx - 14 + i * 7, sway = still ? i : now * 1.6 + i * 1.3;
+    tentaclePath(bx, cy, 11 * grow + 3, sway, 2.6, (i % 2 ? -1 : 1) * (3.6 + Math.sin(sway) * 0.6));
+  }
+  ctx.globalAlpha = 1;
+}
+
 /* ---------- Draw ---------- */
 function R(x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); }
 function draw() {
@@ -1141,15 +1209,19 @@ function draw() {
     ctx.beginPath(); ctx.moveTo(x0, y); ctx.quadraticCurveTo(x0 + w / 2, y - 0.7, x0 + w, y); ctx.stroke();
   });
   ctx.globalAlpha = 1;
+  drawTentacleCameo(P);
   // ambient fish shadows in deep water
   ctx.globalAlpha = P.shadow; ctx.fillStyle = '#000';
   const amb = (performance.now() / 1000) * (reduceMotion ? 0 : 3);
   const fishShape = (x, y, w) => { ctx.beginPath(); ctx.ellipse(x + w / 2, y, w / 2, w / 6, 0, 0, 7); ctx.moveTo(x + 1, y); ctx.lineTo(x - w * 0.2, y - w * 0.14); ctx.lineTo(x - w * 0.2, y + w * 0.14); ctx.fill(); };
   fishShape(118 + Math.sin(amb / 4) * 6, 142, 14); fishShape(70 - Math.sin(amb / 5) * 8, 167, 10); fishShape(138 + Math.sin(amb / 6) * 5, 185, 22);
   ctx.globalAlpha = 1;
+  // the Kraken rising under the bobber
+  const krak = S.fish && S.fish.fight === 'kraken' && (S.state === 'bite' || S.state === 'reeling');
+  if (krak) drawKrakenShadow(P);
   // hooked/approaching fish shadow
   const sh = S.shadow;
-  if (sh && (sh.show || S.state === 'bite' || S.state === 'reeling')) {
+  if (sh && !krak && (sh.show || S.state === 'bite' || S.state === 'reeling')) {
     ctx.globalAlpha = 0.45;
     const x = (S.state === 'reeling' || S.state === 'bite') ? S.bob.x - sh.w / 2 + Math.sin(S.t * 12) * 1.5 : (sh.cx ?? sh.x);
     const y = (S.state === 'reeling' || S.state === 'bite') ? 106 : sh.y;
@@ -1324,7 +1396,7 @@ function showCatch(f, size, isNew, isRecord, dinnerNote, gold, newGold, junkNote
   fillSketch($('catchSketch'), f, '[Drawing of ' + f.name + ' coming soon]', gold);
   $('catchName').textContent = (gold ? 'Golden ' : '') + f.name;
   $('catchFacts').innerHTML = '';
-  (f.junk ? [f.map ? 'Map ' + SAVE.mapPieces + '/4' : size + ' cm', dinnerNote] : [size + ' cm', f.rarity, dinnerNote, f.id === DAILY ? "Today's fish" : null]).filter(Boolean).forEach(t => {
+  (f.junk ? [f.map ? 'Map ' + SAVE.mapPieces + '/4' : size + ' cm', dinnerNote] : [f.fight === 'kraken' ? 'Too big to measure' : size + ' cm', f.rarity, dinnerNote, f.id === DAILY ? "Today's fish" : null]).filter(Boolean).forEach(t => {
     const s = document.createElement('span'); s.textContent = t; $('catchFacts').appendChild(s);
   });
   $('catchNote').textContent = newGold && !isNew ? 'A golden one. Too shiny to eat? No. Still dinner.' : isNew ? f.note : 'Caught ' + SAVE.found[f.id].n + ' times now. Best: ' + SAVE.found[f.id].best + ' cm.';
@@ -1387,7 +1459,7 @@ function showDetail(id) {
   fillSketch(add('div', 'sketch'), f, '[Drawing of ' + f.name + ' coming soon]');
   add('h2', 'fishname', f.name);
   const facts = add('div', 'facts');
-  (f.junk ? [(f.map ? 'Pieces ' + (SAVE.mapPieces || 0) + ' of 4' : null), 'Found ' + rec.n + (rec.n === 1 ? ' time' : ' times'), 'First ' + rec.first].filter(Boolean) : ['Best ' + rec.best + ' cm', 'Caught ' + rec.n + (rec.n === 1 ? ' time' : ' times'), 'First ' + rec.first]).forEach(t => { const s = document.createElement('span'); s.textContent = t; facts.appendChild(s); });
+  (f.junk ? [(f.map ? 'Pieces ' + (SAVE.mapPieces || 0) + ' of 4' : null), 'Found ' + rec.n + (rec.n === 1 ? ' time' : ' times'), 'First ' + rec.first].filter(Boolean) : [f.fight === 'kraken' ? 'Best: enormous' : 'Best ' + rec.best + ' cm', 'Caught ' + rec.n + (rec.n === 1 ? ' time' : ' times'), 'First ' + rec.first]).forEach(t => { const s = document.createElement('span'); s.textContent = t; facts.appendChild(s); });
   add('p', 'note', f.note);
   if (f.id === 101 && SAVE.bottleNote) add('p', 'note', 'Latest note: "' + SAVE.bottleNote + '"');
   if (f.map && (SAVE.mapPieces || 0) >= 4) add('p', 'note', 'The X is far out past the pier. Cast far.');
@@ -1412,6 +1484,7 @@ if (new URLSearchParams(location.search).has('debug')) {
   mk('6am', () => setHour(6)); mk('noon', () => setHour(12)); mk('6pm', () => setHour(18)); mk('10pm', () => setHour(22));
   mk('rain', () => { SAVE.weather = SAVE.weather === 'rain' ? 'clear' : 'rain'; });
   mk('bite now', () => { if (S.state === 'waiting') S.waitAt = S.t; });
+  mk('tentacle', () => { CAMEO.next = 0; });
   mk('reset', () => { SAVE = freshSave(); persist(); updateFound(); });
 }
 
@@ -1444,6 +1517,7 @@ window.__tb = {
   reset() { SAVE = freshSave(); persist(); updateFound(); },
   closeCard() { $('catchOverlay').hidden = true; setState('idle'); },
   catPose, dinnerOpen,
+  cameo() { CAMEO.next = 0; },
 };
 </script>
 </body>

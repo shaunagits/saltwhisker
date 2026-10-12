@@ -531,6 +531,7 @@ function pickFish(sign) {
 function press(wx, wy) {
   if (S.holding) return;
   if (SAVE.sound) sndInit();
+  if (introOn()) { introSkip(); return; }
   // a tap on the perched gull (or Space while it sits there) shoos it instead of casting
   if (THIEF.phase === 'perched' && (wx === undefined || Math.hypot(wx - THIEF.x, wy - THIEF.y) < 11)) { shooGull(); return; }
   S.holding = true;
@@ -754,6 +755,7 @@ function update(dt) {
   const today = todayISO();
   if (S.weatherDate !== today) { S.weatherDate = today; SAVE.weather = weatherFor(today); }
   if (S.shake > 0) S.shake -= dt;
+  introUpdate(dt);
   eventsUpdate(dt);
 
   switch (S.state) {
@@ -1114,6 +1116,33 @@ function drawEyeMood(md, col) {
 }
 const CATANIM = { last: 0, head: 0, amp: 1, speed: 1, flickAt: 6, flick: -1, glanceAt: 4, glance: -1 };
 function easeTo(cur, target, rate, dt) { return cur + (target - cur) * (1 - Math.exp(-rate * dt)); }
+/* ---------- Walk-in: Walter comes out along the pier at the start of a visit ----------
+   The rod leans on the lamp post while he walks; he settles at the end and picks it up. For now the
+   sitting puppet waddles (tilt and bob per step); the walking paintings and leg layers replace that.
+   Any tap skips to the end. With reduced motion there is no walk, he is just there. */
+const INTRO = { phase: 'off', t: 0, x: 0, from: 0 };   // phase: off | wait | walk | sit | rod | done
+const WALK = { speed: 26, step: 2.6, sit: 0.45, rod: 0.55 };   // world px per second, steps per second, seconds
+function introStart() { if (reduceMotion) return; INTRO.phase = 'wait'; INTRO.t = 0; }
+function introGo() { if (INTRO.phase === 'wait') { INTRO.phase = 'walk'; INTRO.t = 0; INTRO.from = Math.min(OX - 24, CATP.x - 30); INTRO.x = INTRO.from; } }
+function introSkip() { if (INTRO.phase !== 'off' && INTRO.phase !== 'done') { INTRO.phase = 'done'; INTRO.x = CATP.x; } }
+const introOn = () => INTRO.phase === 'wait' || INTRO.phase === 'walk' || INTRO.phase === 'sit' || INTRO.phase === 'rod';
+function introUpdate(dt) {
+  if (!introOn()) return;
+  INTRO.t += dt;
+  if (INTRO.phase === 'wait') { INTRO.x = Math.min(OX - 24, CATP.x - 30); INTRO.from = INTRO.x; }
+  else if (INTRO.phase === 'walk') { INTRO.x = Math.min(CATP.x, INTRO.x + WALK.speed * dt); if (INTRO.x >= CATP.x) { INTRO.phase = 'sit'; INTRO.t = 0; } }
+  else if (INTRO.phase === 'sit') { if (INTRO.t >= WALK.sit) { INTRO.phase = 'rod'; INTRO.t = 0; } }
+  else if (INTRO.phase === 'rod') { if (INTRO.t >= WALK.rod) INTRO.phase = 'done'; }
+}
+// where the rod is during the walk-in: leaning on the lamp post, then swinging into the paw
+function introRod(hand, tip) {
+  const lean = { hx: LAMP.x + 4.2, hy: 86, tx: LAMP.x + 0.8, ty: 58.4 };
+  if (INTRO.phase === 'wait' || INTRO.phase === 'walk' || INTRO.phase === 'sit') return [{ x: lean.hx, y: lean.hy }, { x: lean.tx, y: lean.ty }];
+  if (INTRO.phase === 'rod') { const u = 1 - Math.pow(1 - clamp(INTRO.t / WALK.rod, 0, 1), 3);
+    return [{ x: lerp(lean.hx, hand.x, u), y: lerp(lean.hy, hand.y, u) }, { x: lerp(lean.tx, tip.x, u), y: lerp(lean.ty, tip.y, u) - Math.sin(u * Math.PI) * 6 }]; }
+  return [hand, tip];
+}
+
 function drawPaintedCat(P) {
   const pose = catPose(), k = CATP.k, col = sceneTint(P);
   const A = CATANIM, now = performance.now() / 1000;
@@ -1146,6 +1175,8 @@ function drawPaintedCat(P) {
   if (S.state === 'caught') headT = -6;
   if (THIEF.phase === 'perched' || THIEF.phase === 'arriving') headT = -9;
   if (S.state === 'landing') headT = S.fish && (S.fish.junk || S.fish.refuse) ? 5 : -7;
+  const walking = INTRO.phase === 'walk' || INTRO.phase === 'wait';
+  if (walking) headT = -1 + (still ? 0 : Math.sin(INTRO.t * WALK.step * Math.PI * 2) * 1.5);
   if (md === 'happy') headT = -8;
   else if (md === 'proud') headT = -11;
   else if (md === 'shock') headT = -7;
@@ -1160,8 +1191,8 @@ function drawPaintedCat(P) {
   // stands up and puffs on a bite, lashes while reeling
   const lash = S.state === 'reeling' || md === 'angry', puff = pose.puff || md === 'shock';
   const droop = md === 'sad' || md === 'snapped' || md === 'sleepy';
-  A.amp = easeTo(A.amp, puff ? 0.5 : md === 'angry' ? 2.6 : lash ? 1.7 : droop ? 0.3 : md === 'happy' || md === 'proud' ? 1.4 : 1, 4, dt);
-  A.speed = easeTo(A.speed, puff ? 3 : md === 'angry' ? 3.6 : lash ? 2.4 : droop ? 0.5 : md === 'happy' || md === 'proud' ? 1.8 : 1, 3, dt);
+  A.amp = easeTo(A.amp, walking ? 1.6 : puff ? 0.5 : md === 'angry' ? 2.6 : lash ? 1.7 : droop ? 0.3 : md === 'happy' || md === 'proud' ? 1.4 : 1, 4, dt);
+  A.speed = easeTo(A.speed, walking ? 2.2 : puff ? 3 : md === 'angry' ? 3.6 : lash ? 2.4 : droop ? 0.5 : md === 'happy' || md === 'proud' ? 1.8 : 1, 3, dt);
   A.phase = (A.phase || 0) + dt * 1.7 * A.speed;
   if (!still && A.flick < 0 && now > A.flickAt) { A.flick = now; A.flickAt = now + 4 + Math.random() * 5; }
   const fp = A.flick > 0 ? (now - A.flick) / 0.7 : 2;
@@ -1183,9 +1214,17 @@ function drawPaintedCat(P) {
     if ((md === 'happy' && me < 0.7) || (md === 'proud' && me < 1.05)) hop = -Math.abs(Math.sin(Math.PI * me / 0.35)) * 1.6;
     else if (md === 'shock' && me < 0.45) hop = -Math.sin(Math.PI * me / 0.45) * 2.6;
   }
+  // the walk-in: he slides along the deck from the left with a waddle, then settles with a small bounce
+  let walkDx = 0, waddle = 0, bob = 0;
+  if (introOn()) {
+    walkDx = INTRO.x - CATP.x;
+    if (INTRO.phase === 'walk' && !still) { const ph = INTRO.t * WALK.step * Math.PI * 2; waddle = Math.sin(ph) * 4; bob = -Math.abs(Math.sin(ph)) * 1.1; }
+    if (INTRO.phase === 'sit' && !still) bob = -Math.sin(Math.PI * clamp(INTRO.t / WALK.sit, 0, 1)) * 0.8;
+  }
   ctx.imageSmoothingEnabled = true;
   ctx.save();
-  ctx.translate(0, hop);
+  ctx.translate(walkDx, hop + bob);
+  if (waddle) { ctx.translate(feetX, feetY); ctx.rotate(waddle * Math.PI / 180); ctx.translate(-feetX, -feetY); }
   // squash around the feet
   ctx.translate(feetX, feetY); ctx.scale(sx, sy); ctx.translate(-feetX, -feetY);
   ctx.translate(CATP.x, CATP.y); ctx.scale(k, k);
@@ -1223,9 +1262,9 @@ function drawPaintedCat(P) {
   rig(paint);
   ctx.restore();
   // the rod sits in the paw, wherever the squash put it
-  HAND.x = feetX + (CATP.x + CATP.paw[0] * k - feetX) * sx;
-  HAND.y = feetY + (CATP.y + CATP.paw[1] * k - feetY) * sy + hop;
-  drawEmote(P, CATP.x + 300 * k, CATP.y - 1.5 + hop);
+  HAND.x = feetX + (CATP.x + CATP.paw[0] * k - feetX) * sx + walkDx;
+  HAND.y = feetY + (CATP.y + CATP.paw[1] * k - feetY) * sy + hop + bob;
+  if (!introOn()) drawEmote(P, CATP.x + 300 * k, CATP.y - 1.5 + hop);
   // warm lamplight spilling onto the cat and the deck at night
   const lit = clamp(P.glow / 0.2, 0, 1);
   if (lit > 0.05) {
@@ -1899,11 +1938,13 @@ function draw() {
   if (S.state === 'charging') { tip = { x: lerp(TIP.x, 116, S.power), y: lerp(TIP.y, 52, S.power) }; }
   if (S.state === 'reeling') { const bend = clamp(S.tension, 0, 1) + (S.surgeLeft > 0 ? 0.25 : 0); tip = { x: TIP.x + bend * 3, y: TIP.y + bend * 9 + (S.surgeLeft > 0 && !reduceMotion ? Math.sin(S.t * 40) : 0) }; }
   if (S.state === 'bite') tip.y += 2;
+  let hand = HAND;
+  if (introOn()) [hand, tip] = introRod(HAND, tip);
   // bamboo rod, thicker at the paw
   ctx.imageSmoothingEnabled = true; ctx.lineCap = 'round';
-  const midx = lerp(HAND.x, tip.x, 0.5), midy = lerp(HAND.y, tip.y, 0.5);
+  const midx = lerp(hand.x, tip.x, 0.5), midy = lerp(hand.y, tip.y, 0.5);
   ctx.strokeStyle = mulHex('#8a6238', sceneTint(P)); ctx.lineWidth = 0.9;
-  ctx.beginPath(); ctx.moveTo(HAND.x - 1, HAND.y + 0.6); ctx.lineTo(midx, midy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(hand.x - 1, hand.y + 0.6); ctx.lineTo(midx, midy); ctx.stroke();
   ctx.lineWidth = 0.55; ctx.beginPath(); ctx.moveTo(midx, midy); ctx.lineTo(tip.x, tip.y); ctx.stroke();
 
   // bobber + line
@@ -2019,7 +2060,7 @@ function updateHud() {
   m.style.fontFamily = S.state === 'bite' ? "'Shantell Sans', sans-serif" : '';
   m.style.fontWeight = S.state === 'bite' ? '800' : '';
   m.style.fontSize = S.state === 'bite' ? '26px' : '';
-  $('panel').style.visibility = (S.state === 'caught' || S.state === 'flying') ? 'hidden' : 'visible';
+  $('panel').style.visibility = (S.state === 'caught' || S.state === 'flying' || introOn()) ? 'hidden' : 'visible';
   const basic = msg === 'Hold anywhere to wind up. Let go to cast.' || msg === 'Tap to twitch the bait. Wait for the dip...';
   $('panel').classList.toggle('quiet', basic && (SAVE.casts || 0) >= TUNE.quietAfter);
 }
@@ -2049,10 +2090,12 @@ function showCatch(f, size, isNew, isRecord, _unused, gold, newGold, junkNote) {
 function showTitle() {
   $('titleTips').hidden = !!SAVE.seenTips;
   $('title').hidden = false;
+  introStart();
   setTimeout(() => $('startBtn').focus(), 300);
 }
 $('startBtn').addEventListener('click', () => {
   $('title').hidden = true;
+  introGo();
   if (!SAVE.seenTips) { SAVE.seenTips = true; persist(); }
   if (SAVE.sound) sndInit();
 });
@@ -2229,7 +2272,8 @@ window.__tb = {
   cameo() { CAMEO.next = 0; },
   frenzy() { FRENZY.next = 0; FRENZY.until = 0; },
   thief() { S.lastSteal = { id: 1, name: 'Pier Perch', prev: SAVE.found[1] ? JSON.parse(JSON.stringify(SAVE.found[1])) : { n: 1, best: 20, first: todayISO() } }; const r = Math.random; Math.random = () => 0; maybeThief(); Math.random = r; },
-  hideTitle() { $('title').hidden = true; },
+  hideTitle() { $('title').hidden = true; introSkip(); },
+  intro: { go() { introStart(); introGo(); }, INTRO },
 };
 </script>
 </body>

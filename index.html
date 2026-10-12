@@ -317,7 +317,7 @@ const TUNE = {
   sweetWidth: { Common: 0.38, Uncommon: 0.32, Rare: 0.26, Legendary: 0.2, 'Odds and Ends': 0.44 },
   rainChance: 0.3,         // share of calendar days that are rainy (the same days for every player)
   dailyBoost: 3,           // today's fish is this many times more likely
-  perfectWidth: 0.04,      // a cast within this much power of a target is a perfect cast
+  perfectWidth: 0.06,      // a cast within this much power of a target is a perfect cast (about 65 ms on the bar)
   signRadius: 6,           // world px: landing this close to a water sign counts as on it
   signWait: 0.45,          // waiting time multiplier when the cast lands on a sign
   twitchTap: 0.45,         // a press shorter than this (s) while waiting is a twitch; longer reels in
@@ -715,8 +715,9 @@ function landFish() {
   }
   if (f.chest) { SAVE.lucky = true; junkNote = f.note + ' (Golden fish now show up twice as often.)'; }
   if (f.id === 101) { SAVE.bottleNote = bottleMessage(); junkNote = f.note + ' It says: "' + SAVE.bottleNote + '"'; }
-  // what the record looked like before this catch, so a gull that steals it can undo it
-  S.lastSteal = (!f.junk && f.fight !== 'kraken') ? { id: f.id, name: f.name, prev: rec ? JSON.parse(JSON.stringify(rec)) : null } : null;
+  // what the record looked like before this catch, so a gull that steals it can undo it. The gull never
+  // bothers a first catch of a species: a new Tidebook entry is safe, only repeats (and a new best) are at stake
+  S.lastSteal = (!f.junk && f.fight !== 'kraken' && rec) ? { id: f.id, name: f.name, prev: JSON.parse(JSON.stringify(rec)) } : null;
   if (isNew) SAVE.found[f.id] = { n: 1, best: size, first: todayISO() };
   else { rec.n++; if (isRecord) rec.best = size; }
   const r2 = SAVE.found[f.id], newGold = gold && !r2.gold;

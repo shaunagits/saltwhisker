@@ -13,7 +13,7 @@ Play it at https://games.shauna.digital/saltwhisker/
 5. **Golden fish.** About 1 in 20 bites is a golden version, given away by a gold shimmer in the water. Golden catches get a star in the journal.
 6. **Odds and ends.** Not everything is a fish: a message in a bottle (its note tips you off about a fish you have not caught), four torn map pieces (all four reveal a sunken chest far out, whose lucky coin doubles golden fish), a rubber duck, an empty sardine tin and a single flip-flop. They sit in the journal after the fish with an Odds and Ends tag and are counted separately.
 7. **The Kraken.** A legendary that bites only at night with a long cast. The fight comes in three rounds, one per tentacle (heavy, then wriggling, then lunging), each stronger than the last. A huge shape rises under the bobber and Walter's tail stays puffed the whole time. Now and then at night one of Shauna's painted tentacles (`art/kraken-tentacle-1.webp`, `-2.webp`) rises far out at sea and sinks again (`CAMEO`); the same two paintings, as dark silhouettes, ring the shape under the bobber during the fight, and the bottle sometimes hints at him. `?debug` has a tentacle button.
-8. **Jumping fish.** Strong fish leap mid-fight. Tap as they jump to set the hook (they lose line); miss and they gain a little.
+8. **Jumping fish.** Strong fish leap mid-fight. Tap as they jump to set the hook (they lose line); miss and they gain a little. The fight pauses while the fish is in the air and the line follows it; tension lands mid-green with a short grace before the next lunge.
 9. **Feeding frenzy.** Every few minutes in daylight, gulls dive over one spot for 30 seconds. Cast near them for quick bites.
 10. **Seagull thief.** Sometimes after a catch a gull lands on the lamp. Tap it within about 3 seconds or it steals that catch's dinner points.
 11. **Catch.** A journal card shows the fish. New fish get a "NEW ENTRY" stamp, bigger ones get "NEW BEST".
@@ -29,7 +29,7 @@ Everything is in `index.html`: canvas plus plain JavaScript, no build step, no d
 Sections inside the script, in order:
 
 - `TUNE`: every tuning knob (clock speed, cast timing, bite window, reel and tension rates, dinner goal). Change numbers here, not in the logic.
-- `FISH`: the 15 fish. Each has time of day, depth, weight (how often it bites), size range, strength, rarity, the cat's journal note, the hint shown before it's found, and optional `weather`, `sunday` or `refuse`.
+- `FISH`: the 16 fish (the Kraken is 16) plus the odds and ends (ids 101 to 106, `junk: true`). Each has time of day, depth, weight (how often it bites), size range, strength, rarity, the cat's journal note, the hint shown before it's found, and optional `weather`, `sunday` or `refuse`.
 - Save: local storage key `saltwhisker.save` (clock, weather, journal, dinner, streak).
 - Camera: `CAM` is the focus box (cat, rod, bobber, near water). The game zooms so that box always fits and fills the rest of the screen with more world. Portrait shows more water, landscape shows more sea and sky.
 - Walter's pixel stand-in (shown only while the paintings load): `CAT_MAP` is the 16 by 16 sprite as text, one letter per color. `catPose()` and `catPixels()` add the ear, tail and crouch cues. At night a soft rim light keeps his outline readable.

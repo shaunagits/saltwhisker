@@ -919,6 +919,68 @@ SKY_DAY.src = 'art/sky-day.webp';
 const SKY_NIGHT = new Image();
 SKY_NIGHT.src = 'art/sky-night.webp';
 const SKY_RECT = { x: 10, w: 200 };   // world x range the painting spans; height follows its aspect ratio
+// Painted water (Shauna's sea-day.webp): one painting spanning the same world x range as the sky, its
+// top on the horizon (y 96), height from its aspect ratio (5:2 makes 80 world px). Edges stretch for
+// wide screens like the sky, the bottom row continues below. Tinted for dusk, night and rain like the
+// pier, and drawn in thin horizontal slices that sway sideways so the paint moves without tiling.
+const SEA_IMG = loadImg('art/sea-day.webp');
+const SEA = { slices: 26, sway: 0.5 };
+function seaReady() { return imgReady(SEA_IMG); }
+// Drifting clouds (Shauna's cloud sheet split by tools/build-clouds.py into art/cloud-1..5.webp). Each
+// cloud in the sky gets a height, size and a slow speed; it wraps around off the right edge of the
+// painting. Faint at night, grayer in rain (sceneTint). Still with reduced motion.
+const CLOUD_IMGS = [1, 2, 3, 4, 5].map(i => loadImg('art/cloud-' + i + '.webp'));
+const CLOUDS = [];
+function cloudsSetup() {
+  if (CLOUDS.length) return;
+  const have = CLOUD_IMGS.filter(imgReady);
+  if (!have.length) return;
+  const n = Math.min(6, have.length + 2);
+  for (let i = 0; i < n; i++) {
+    const im = have[i % have.length];
+    const far = i % 3 === 0;             // a few sit higher and smaller, and drift slower
+    const w = far ? rand(8, 14) : rand(14, 24);
+    CLOUDS.push({ im, w, y: far ? rand(4, 22) : rand(14, 46), x: rand(SKY_RECT.x - 40, SKY_RECT.x + SKY_RECT.w), v: (far ? rand(0.12, 0.2) : rand(0.25, 0.45)), a: far ? 0.75 : 0.95 });
+  }
+}
+let cloudsAt = 0;
+function drawClouds(P, now) {
+  cloudsSetup();
+  if (!CLOUDS.length) return;
+  const dt = cloudsAt ? clamp(now - cloudsAt, 0, 0.1) : 0; cloudsAt = now;
+  const night = nightSkyAmount(P), col = sceneTint(P);
+  ctx.imageSmoothingEnabled = true;
+  for (const c of CLOUDS) {
+    if (!reduceMotion) { c.x += c.v * dt; if (c.x > SKY_RECT.x + SKY_RECT.w + 10) c.x = SKY_RECT.x - c.w - 10 - rand(0, 30); }
+    const h = c.w * c.im.naturalHeight / c.im.naturalWidth;
+    ctx.globalAlpha = c.a * (1 - night * 0.6);
+    ctx.drawImage(tinted('cloud' + CLOUD_IMGS.indexOf(c.im), c.im, col), c.x, c.y, c.w, h);
+  }
+  ctx.globalAlpha = 1; ctx.imageSmoothingEnabled = false;
+}
+// A little boat crosses far out on the horizon now and then (art/boat.webp), by day and at dusk.
+const BOAT_IMG = loadImg('art/boat.webp');
+const BOAT = { next: 25 + Math.random() * 60, start: -1, dir: 1, len: 90, w: 7 };
+function drawBoat(P, now) {
+  if (!imgReady(BOAT_IMG)) return;
+  const daylight = nightSkyAmount(P) < 0.5 && SAVE.weather !== 'rain';
+  if (BOAT.start < 0) {
+    if (now < BOAT.next) return;
+    if (!daylight || reduceMotion) { BOAT.next = now + 30; return; }
+    BOAT.start = now; BOAT.dir = Math.random() < 0.5 ? 1 : -1; BOAT.len = rand(70, 110); BOAT.w = rand(5.5, 8);
+  }
+  const t = now - BOAT.start;
+  if (t > BOAT.len) { BOAT.start = -1; BOAT.next = now + rand(120, 300); return; }
+  // from one edge of the painting to the other, behind the coast on the right so it slips in and out of the haze
+  const a = SKY_RECT.x + 20, b = SKY_RECT.x + SKY_RECT.w - 10;
+  const x = BOAT.dir > 0 ? lerp(a, b, t / BOAT.len) : lerp(b, a, t / BOAT.len);
+  const w = BOAT.w, h = w * BOAT_IMG.naturalHeight / BOAT_IMG.naturalWidth, bob = reduceMotion ? 0 : Math.sin(now * 1.3) * 0.15;
+  const fade = clamp(Math.min(t / 6, (BOAT.len - t) / 6), 0, 1);
+  ctx.save(); ctx.globalAlpha = fade * (1 - nightSkyAmount(P)) * 0.9; ctx.imageSmoothingEnabled = true;
+  ctx.translate(x, 96.6 + bob); if (BOAT.dir < 0) ctx.scale(-1, 1);
+  ctx.drawImage(tinted('boat', BOAT_IMG, sceneTint(P)), -w / 2, -h * 0.86, w, h);   // waterline 14% up the painting
+  ctx.restore(); ctx.globalAlpha = 1; ctx.imageSmoothingEnabled = false;
+}
 // Distant scenery (village left, lighthouse right), cut out and cropped to its content.
 // Its bottom edge is the horizon. Shifted left so the lighthouse shows on phones in portrait.
 const FAR_DAY = new Image();
@@ -994,6 +1056,28 @@ function drawPaintedSky(img) {
   ctx.drawImage(img, img.naturalWidth - 2, 0, 2, img.naturalHeight, SKY_RECT.x + SKY_RECT.w - 0.5, y, 300, h);
   // above the painting, continue its top color
   ctx.drawImage(img, 0, 0, img.naturalWidth, 2, SKY_RECT.x - 300, y - 300, SKY_RECT.w + 600, 300.5);
+  ctx.imageSmoothingEnabled = false;
+}
+
+function drawPaintedSea(P, now) {
+  const im = tinted('sea', SEA_IMG, sceneTint(P)), iw = SEA_IMG.naturalWidth, ih = SEA_IMG.naturalHeight;
+  const w = SKY_RECT.w, h = w * ih / iw, x0 = SKY_RECT.x, y0 = 96;
+  const n = SEA.slices, sh = ih / n, dh = h / n, still = reduceMotion;
+  ctx.imageSmoothingEnabled = true;
+  // the view only shows part of the painting: skip slices above or below it
+  const top = Math.max(0, Math.floor((OY - y0) / dh)), bot = Math.min(n, Math.ceil((OY + VH - y0) / dh));
+  for (let i = top; i < bot; i++) {
+    // more sway closer in, none at the horizon; two slow waves so it never looks like a loop
+    const depth = (i + 0.5) / n;
+    const dx = still ? 0 : (Math.sin(now * 0.55 + i * 0.7) * 0.6 + Math.sin(now * 0.23 - i * 0.45) * 0.4) * SEA.sway * depth;
+    const dy = y0 + i * dh, sy = i * sh;
+    ctx.drawImage(im, 0, sy, iw, sh + 1, x0 + dx, dy, w, dh + 0.08);
+    // stretched edge columns for wide screens
+    ctx.drawImage(im, 0, sy, 2, sh + 1, x0 + dx - 300, dy, 300.5, dh + 0.08);
+    ctx.drawImage(im, iw - 2, sy, 2, sh + 1, x0 + dx + w - 0.5, dy, 300, dh + 0.08);
+  }
+  // below the painting, continue its bottom row
+  if (OY + VH > y0 + h) ctx.drawImage(im, 0, ih - 2, iw, 2, x0 - 300, y0 + h - 0.1, w + 600, 300);
   ctx.imageSmoothingEnabled = false;
 }
 
@@ -1878,6 +1962,7 @@ function draw() {
   if (paintN > 0.01) { ctx.globalAlpha = paintN; drawPaintedSky(SKY_NIGHT); }
   if (rainy && paint + paintN > 0.01) { ctx.globalAlpha = (paint + paintN) * 0.7; R(-300, -300, 800, 400, paintN > paint ? '#2a3046' : '#7b818c'); }
   ctx.globalAlpha = 1;
+  drawClouds(P, performance.now() / 1000);
   const painted = SKY_DAY.complete && SKY_DAY.naturalWidth > 0;
   const codeSky = clamp(1 - paint - paintN, 0, 1);
   // stars
@@ -1918,6 +2003,8 @@ function draw() {
     ctx.strokeStyle = '#4a4a58'; ctx.lineWidth = 0.45; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(gx, 42 - flap); ctx.quadraticCurveTo(gx + 2, 41.2, gx + 3.5, 43); ctx.quadraticCurveTo(gx + 5, 41.2, gx + 7, 42 - flap); ctx.stroke();
   }
+  // a boat far out, then the land in front of it
+  drawBoat(P, performance.now() / 1000);
   // land
   if (farReady()) drawFar(P);
   else { R(-200, 90, 244, 6, P.land); R(8, 86, 24, 4, P.land); R(160, 92, 240, 4, P.land); }
@@ -1925,6 +2012,7 @@ function draw() {
   const seaG = ctx.createLinearGradient(0, 96, 0, 175);
   seaG.addColorStop(0, mixHex(P.sea, P.bot, 0.3)); seaG.addColorStop(0.2, P.sea); seaG.addColorStop(0.55, P.seaDeep); seaG.addColorStop(1, P.seaDeeper);
   ctx.fillStyle = seaG; ctx.fillRect(-300, 96, 800, 400);
+  if (seaReady()) drawPaintedSea(P, performance.now() / 1000);
   ctx.globalAlpha = 0.35; R(-300, 95.7, 800, 0.6, mixHex(P.bot, '#ffffff', 0.3)); ctx.globalAlpha = 1;   // soft horizon
   ctx.imageSmoothingEnabled = true;
   if (!rainy) {
@@ -2290,6 +2378,7 @@ if (new URLSearchParams(location.search).has('debug')) {
   mk('tentacle', () => { CAMEO.next = 0; });
   mk('frenzy', () => { FRENZY.next = 0; FRENZY.until = 0; });
   mk('gull', () => { S.lastSteal = { id: 1, name: 'Pier Perch', prev: SAVE.found[1] ? JSON.parse(JSON.stringify(SAVE.found[1])) : { n: 1, best: 20, first: todayISO() } }; const r = Math.random; Math.random = () => 0; maybeThief(); Math.random = r; });
+  mk('boat', () => { BOAT.start = -1; BOAT.next = 0; });
   mk('reset', () => { SAVE = freshSave(); persist(); updateFound(); });
 }
 
@@ -2337,6 +2426,7 @@ window.__tb = {
   thief() { S.lastSteal = { id: 1, name: 'Pier Perch', prev: SAVE.found[1] ? JSON.parse(JSON.stringify(SAVE.found[1])) : { n: 1, best: 20, first: todayISO() } }; const r = Math.random; Math.random = () => 0; maybeThief(); Math.random = r; },
   hideTitle() { $('title').hidden = true; introSkip(); },
   intro: { go() { introStart(); introGo(); }, INTRO },
+  boat() { BOAT.start = -1; BOAT.next = 0; }, CLOUDS,
 };
 </script>
 </body>

@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Saltwhisker</title>
-<meta name="description" content="Walter, a tuxedo cat in a yellow sou&#39;wester, fishes off a painted pier for his dinner and keeps a journal of every catch.">
+<meta name="description" content="Walter, a tuxedo cat in a yellow sou&#39;wester, fishes off a painted pier and keeps a journal of every catch.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://games.shauna.digital/saltwhisker/">
 <meta property="og:title" content="Saltwhisker">
-<meta property="og:description" content="Walter, a tuxedo cat in a yellow sou&#39;wester, fishes off a painted pier for his dinner and keeps a journal of every catch.">
+<meta property="og:description" content="Walter, a tuxedo cat in a yellow sou&#39;wester, fishes off a painted pier and keeps a journal of every catch.">
 <meta property="og:image" content="https://games.shauna.digital/saltwhisker/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -86,7 +86,6 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .clock svg { width: 15px; height: 15px; }
 .topwrap { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
 .topwrap .top { align-self: stretch; }
-.dinner { height: 40px; font-size: 15px; gap: 8px; }
 .pips { display: flex; gap: 4px; }
 .pip { width: 12px; height: 12px; box-sizing: border-box; border: 1.5px solid #b9a787; border-radius: 50%; background: var(--shade); }
 .pip.on { background: #e0703a; border-color: #a9502a; }
@@ -106,6 +105,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .meter { position: relative; height: 18px; border: 1.5px solid rgba(43, 42, 51, 0.4); border-radius: 999px; background: var(--shade); box-sizing: border-box; overflow: visible; }
 .meter .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--tide); border-radius: 999px; }
 .meter .zone { position: absolute; top: 0; bottom: 0; border-radius: 999px; }
+.meter .tgt { position: absolute; top: -3px; bottom: -3px; background: #ffd35a; border: 1.5px solid #faf4e6; border-radius: 4px; box-shadow: 0 0 6px rgba(255, 211, 90, 0.8); z-index: 1; }
 .meter .mark { position: absolute; top: -7px; width: 6px; height: 29px; margin-left: -3px; background: var(--ink); border-radius: 3px; box-shadow: 0 0 0 2px rgba(250, 244, 230, 0.9); }
 [hidden] { display: none !important; }
 
@@ -190,9 +190,10 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 <div class="title" id="title" hidden>
   <div class="titlecard">
     <h1 class="tname">Saltwhisker</h1>
-    <p class="tsub">Help Walter catch dinner by 8 PM.</p>
+    <p class="tsub">Help Walter fill his Tidebook.</p>
     <ul class="ttips" id="titleTips" hidden>
-      <li>Hold to wind up. Let go to cast.</li>
+      <li>Hold to wind up. Let go to cast. Aim for bubbles and fins on the water.</li>
+      <li>Tap to twitch the bait. Gently. Hold to reel in and try again.</li>
       <li>When the bobber dips, tap.</li>
       <li>Hold to reel. Keep the marker in the green.</li>
     </ul>
@@ -220,7 +221,6 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
     </button>
     </div>
   </div>
-  <div class="chip dinner" id="dinnerChip" hidden><span id="dinnerLabel">DINNER</span><span class="pips" id="dinnerPips"></span><span class="small" id="dinnerRight">by 8 PM</span></div>
   </div>
   <div class="panel" id="panel">
     <div class="row" id="meterRow" hidden><span class="label" id="meterLabel">CAST POWER</span><span class="small" id="meterRight"></span></div>
@@ -290,9 +290,13 @@ const TUNE = {
   sweetWidth: { Common: 0.38, Uncommon: 0.32, Rare: 0.26, Legendary: 0.2, 'Odds and Ends': 0.44 },
   rainChance: 0.3,         // share of calendar days that are rainy (the same days for every player)
   dailyBoost: 3,           // today's fish is this many times more likely
-  dinnerGoal: 4,           // dinner points Walter needs each evening
-  dinnerStart: 6,          // dinner window opens (game hour)
-  dinnerHour: 20,          // and closes: catch enough by 8 PM
+  perfectWidth: 0.04,      // a cast within this much power of a target is a perfect cast
+  signRadius: 6,           // world px: landing this close to a water sign counts as on it
+  signWait: 0.45,          // waiting time multiplier when the cast lands on a sign
+  twitchTap: 0.45,         // a press shorter than this (s) while waiting is a twitch; longer reels in
+  twitchGap: 0.7,          // twitches at least this far apart (s) draw the fish in
+  twitchSpeed: 0.7,        // each good twitch keeps this share of the remaining wait
+  twitchSpook: 4,          // this many twitches inside 1.8 s scares the fish off
 };
 
 /* ---------- Fish ---------- */
@@ -365,12 +369,11 @@ const GOLD = { chance: 0.05, filter: 'sepia(1) saturate(3.2) hue-rotate(-14deg) 
 
 /* ---------- Save ---------- */
 const SAVE_KEY = 'saltwhisker.save';
-function freshSave() { return { v: 1, start: todayISO(), gm: 0, weather: 'clear', dayRolled: 1, found: {}, dinner: { key: 1, pts: 0, done: false, judged: false }, streak: 0, best: 0 }; }
+function freshSave() { return { v: 1, start: todayISO(), gm: 0, weather: 'clear', dayRolled: 1, found: {} }; }
 function loadSave() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
     if (s && s.v === 1 && s.found) {
-      if (!s.dinner) { s.dinner = { key: 0, pts: 0, done: false, judged: false }; s.streak = 0; s.best = 0; }
       // saves from the old fast clock: keep their day count going from today
       if (!s.start) s.start = isoAddDays(todayISO(), -(Math.floor(s.gm / 1440)));
       return s;
@@ -480,7 +483,7 @@ function castRange() {
   return [left, Math.max(left + 12, right)];
 }
 function isSunday() { return new Date().getDay() === 0; }
-function pickFish() {
+function pickFish(sign) {
   const per = periodOf(hourOf(SAVE.gm));
   const pool = FISH.filter(f =>
     (f.time === 'any' || f.time === per) &&
@@ -490,7 +493,7 @@ function pickFish() {
     (!f.map || (SAVE.mapPieces || 0) < 4) &&
     (!f.chest || ((SAVE.mapPieces || 0) >= 4 && !SAVE.found[f.id])));
   let total = 0;
-  const ws = pool.map(f => { const w = f.w * (f.id === DAILY ? TUNE.dailyBoost : 1); total += w; return w; });
+  const ws = pool.map(f => { const w = f.w * (f.id === DAILY ? TUNE.dailyBoost : 1) * signWeight(f, sign); total += w; return w; });
   let r = Math.random() * total;
   for (let i = 0; i < pool.length; i++) { r -= ws[i]; if (r <= 0) return pool[i]; }
   return pool[0];
@@ -506,11 +509,9 @@ function press(wx, wy) {
   if (S.state === 'reeling' && S.jump) S.jump.hit = true;
   switch (S.state) {
     case 'idle': case 'message':
-      setState('charging'); S.power = 0; break;
+      setState('charging'); S.power = 0; S.targets = castTargets(); break;
     case 'waiting':
-      if (S.t - S.lastNibble < 0.35) say('Too early! It swam off.', 1.6);
-      else say('Reeled in. Nothing yet.', 1.2);
-      break;
+      S.pressAt = S.t; break;            // a quick tap twitches the bait, a long hold reels in (see update)
     case 'bite':
       hook(); break;
   }
@@ -519,6 +520,7 @@ function release() {
   if (!S.holding) return;
   S.holding = false;
   if (S.state === 'charging') cast();
+  else if (S.state === 'waiting' && S.t - S.pressAt <= TUNE.twitchTap) twitch();
 }
 function isUiTarget(e) { return e.target.closest && e.target.closest('a, button, .overlay, .journal, .debug, .title'); }
 window.addEventListener('pointerdown', e => { if (isUiTarget(e)) return; e.preventDefault(); press(e.clientX / SC + OX, e.clientY / SC + OY); });
@@ -539,6 +541,7 @@ function say(text, secs) {
 }
 function cast() {
   const p = S.power;
+  S.perfect = (S.targets || []).some(t => Math.abs(p - t) <= TUNE.perfectWidth);
   S.depth = depthFromPower(p);
   const [a, b] = castRange();
   S.bob.tx = lerp(a, b, p);
@@ -547,20 +550,29 @@ function cast() {
 }
 function startWaiting() {
   setState('waiting');
-  S.waitAt = rand(TUNE.waitMin, TUNE.waitMax);
-  S.nibbles = [];
-  if (Math.random() < TUNE.nibbleChance) {
-    const n = 1 + (Math.random() < 0.4 ? 1 : 0);
-    for (let i = 0; i < n; i++) S.nibbles.push(rand(S.waitAt * 0.45, S.waitAt - 0.6));
-  }
-  S.lastNibble = -9;
-  S.fish = pickFish();
+  // landed on a sign in the water? it is used up, and its fish comes quicker
+  const sign = SIGNS.list.find(g => Math.abs(g.x - S.bob.x) <= TUNE.signRadius);
+  S.sign = sign ? sign.kind : null;
+  if (sign) { sign.t = Math.max(sign.t, sign.life - 0.6); }
+  S.twitches = []; S.lastGoodTwitch = -9; S.pressAt = -9; S.bobDip = 0;
+  newBiter(rand(TUNE.waitMin, TUNE.waitMax) * (S.sign ? TUNE.signWait : 1) * (S.perfect && !S.sign ? 0.75 : 1));
+  if (frenzyOn(performance.now() / 1000) && Math.abs(S.bob.x - FRENZY.x) < 14) { S.waitAt = rand(0.7, 1.6); S.nibbleAt = 99; }
+}
+// pick the fish that will bite (or bite again after a spook), when, and how it nibbles first
+function newBiter(wait) {
+  S.waitAt = S.t + wait;
+  S.fish = pickFish(S.sign);
   leapImg(S.fish);
-  if (frenzyOn(performance.now() / 1000) && Math.abs(S.bob.x - FRENZY.x) < 14) { S.waitAt = rand(0.7, 1.6); S.nibbles = []; }
+  S.nibKind = nibbleKind(S.fish);
+  S.lastNibble = -9; S.nibbles = [];
+  // almost every fish nibbles at least once first, so the player can read it
+  S.nibbleAt = Math.random() < 0.9 ? S.t + Math.min(rand(0.9, 1.6), Math.max(0.5, wait * 0.45)) : 99;
+  S.nibbled = false;
   S.gold = !S.fish.junk && S.fish.fight !== 'kraken' && Math.random() < goldChance();
   const fromLeft = Math.random() < 0.5;
   const sz = clamp(S.fish.size[1] / 10, 4, 14);
   S.shadow = { x: S.bob.x + (fromLeft ? -40 : 40), y: rand(112, 124), w: sz, show: false };
+  S.shadow.cx = S.shadow.x;
 }
 function hook() {
   setState('reeling');
@@ -572,6 +584,7 @@ function hook() {
   S.reelFrom = S.bob.x;
   S.fight = { t: 0, at: rand(0.4, 0.6) }; S.fightMsg = ''; S.ghostOut = false;
   S.jump = null; S.nextJump = rand(2.5, 4.5);
+  if (f.fight === 'kraken') mood('shock', 1.6);
 }
 // One step of the fish's fight. Returns how it changes the pull this frame.
 // The green part of the tension bar: narrower for rarer fish, drifting for wrigglers.
@@ -657,7 +670,9 @@ function bottleMessage() {
 }
 function landFish() {
   const f = S.fish;
-  const size = Math.round(rand(f.size[0], f.size[1]));
+  // a perfect cast tends to bring a bigger one
+  const size = Math.round(lerp(f.size[0], f.size[1], S.perfect ? 0.45 + 0.55 * Math.random() : Math.random()));
+  S.perfectCatch = !!S.perfect;
   const rec = SAVE.found[f.id];
   const isNew = !rec;
   const isRecord = !isNew && size > rec.best;
@@ -670,32 +685,19 @@ function landFish() {
   }
   if (f.chest) { SAVE.lucky = true; junkNote = f.note + ' (Golden fish now show up twice as often.)'; }
   if (f.id === 101) { SAVE.bottleNote = bottleMessage(); junkNote = f.note + ' It says: "' + SAVE.bottleNote + '"'; }
+  // what the record looked like before this catch, so a gull that steals it can undo it
+  S.lastSteal = (!f.junk && f.fight !== 'kraken') ? { id: f.id, name: f.name, prev: rec ? JSON.parse(JSON.stringify(rec)) : null } : null;
   if (isNew) SAVE.found[f.id] = { n: 1, best: size, first: todayISO() };
   else { rec.n++; if (isRecord) rec.best = size; }
   const r2 = SAVE.found[f.id], newGold = gold && !r2.gold;
   if (gold) r2.gold = (r2.gold || 0) + 1;
-  let dinnerNote = '';
-  S.lastPts = 0;
-  const D = SAVE.dinner;
-  if (f.junk) dinnerNote = 'Not food';
-  else if (f.fight === 'kraken') dinnerNote = 'Too big for the bucket';
-  else if (f.refuse) dinnerNote = 'Won\'t eat it';
-  else if (!dinnerOpen(SAVE.gm)) dinnerNote = 'Midnight snack';
-  else if (D.done) dinnerNote = 'Extra helping';
-  else {
-    const pts = dinnerPoints(size);
-    const before = D.pts;
-    D.pts = Math.min(TUNE.dinnerGoal, D.pts + pts);
-    S.lastPts = D.pts - before; S.lastMadeDinner = false;
-    dinnerNote = '+' + pts + ' dinner';
-    if (D.pts >= TUNE.dinnerGoal) { D.done = true; SAVE.streak++; SAVE.best = Math.max(SAVE.best, SAVE.streak); dinnerNote = 'Dinner served!'; S.lastMadeDinner = true; setTimeout(SFX.purr, 1800); }
-  }
   persist();
   S.catches++;
   // the fish leaps out of the water and dangles from the rod for a moment, then the card comes up
-  if (f.junk || f.refuse || !dinnerOpen(SAVE.gm)) S.lastPts = 0;
   (f.junk || f.refuse) ? SFX.meh() : SFX.chime();
-  S.pending = [f, size, isNew, isRecord && !f.junk, dinnerNote, gold, newGold, junkNote];
+  if (isNew && !f.junk) setTimeout(SFX.purr, 1800);
+  mood(f.fight === 'kraken' ? 'shock' : (f.junk || f.refuse) ? 'meh' : (gold || isNew || isRecord) ? 'proud' : 'happy', f.fight === 'kraken' ? 2.6 : 2.2);
+  S.pending = [f, size, isNew, isRecord && !f.junk, null, gold, newGold, junkNote];
   S.landMsg = f.fight === 'kraken' ? 'THE KRAKEN! He is... waving?' : f.junk ? 'Oh. ' + (/^[aeiou]/i.test(f.name) ? 'An ' : 'A ') + f.name.toLowerCase() + '.'
     : gold ? 'A golden ' + f.name + '!' : f.refuse ? 'Got... a ' + f.name + '. Hmm.' : 'Got it! ' + f.name + '!';
   S.leapFrom = S.bob.x;
@@ -706,32 +708,10 @@ function landFish() {
 }
 function lose(text, snap) {
   if (snap) { S.snaps++; S.shake = reduceMotion ? 0 : 0.35; SFX.snap(); } else S.escapes++;
+  mood(snap ? 'snapped' : 'sad', 2.4);
   say(text, 1.8);
 }
 
-
-/* ---------- Dinner ---------- */
-function dinnerKey(gm) { const h = hourOf(gm); return h >= TUNE.dinnerStart ? dayOf(gm) : dayOf(gm) - 1; }
-function dinnerOpen(gm) { const h = hourOf(gm); return h >= TUNE.dinnerStart && h < TUNE.dinnerHour; }
-function dinnerPoints(size) { return clamp(Math.round(size / 20), 1, 3); }
-function tickDinner() {
-  const k = dinnerKey(SAVE.gm), D = SAVE.dinner;
-  if (D.key !== k) {
-    // a missed dinner on a day the player was away still ends the streak
-    if (!D.done && D.key && k - D.key >= 1 && !D.judged) SAVE.streak = 0;
-    SAVE.dinner = { key: k, pts: 0, done: false, judged: false }; return;
-  }
-  if (dinnerOpen(SAVE.gm)) S.sawDinner = true;
-  if (!D.judged && !dinnerOpen(SAVE.gm) && hourOf(SAVE.gm) >= TUNE.dinnerHour) {
-    D.judged = true;
-    if (!D.done) {
-      SAVE.streak = 0;
-      // only grumble if the player was here while dinner was still possible
-      if (S.sawDinner && (S.state === 'idle' || S.state === 'message')) say('8 PM and no dinner. Walter sulks. Night fish are snacks only.', 3);
-    }
-    persist();
-  }
-}
 
 /* ---------- Update ---------- */
 let rainTimer = 0;
@@ -745,7 +725,6 @@ function update(dt) {
   const today = todayISO();
   if (S.weatherDate !== today) { S.weatherDate = today; SAVE.weather = weatherFor(today); }
   if (S.shake > 0) S.shake -= dt;
-  tickDinner();
   eventsUpdate(dt);
 
   switch (S.state) {
@@ -758,17 +737,28 @@ function update(dt) {
       const k = clamp(S.t / TUNE.flightTime, 0, 1);
       S.bob.x = lerp(S.bob.sx, S.bob.tx, k);
       S.bob.y = lerp(S.bob.sy, 102, k) - Math.sin(k * Math.PI) * (16 + S.power * 18);
-      if (k >= 1) { S.bob.y = 102; splash(S.bob.x, 102, 6); startWaiting(); }
+      if (k >= 1) {
+        S.bob.y = 102; splash(S.bob.x, 102, 6);
+        if (S.perfect) { sparkle(S.bob.x, 101, 10); flash('Perfect cast!', 1.4); mood('proud', 1.3); SFX.hookset(); }
+        startWaiting();
+      }
       break;
     }
     case 'waiting': {
+      if (S.holding && S.t - S.pressAt > TUNE.twitchTap + 0.15) { say('Reeled in. Nothing yet.', 1.0); break; }
       const sh = S.shadow;
       if (S.t > S.waitAt - 3) sh.show = true;
       if (sh.show) {
         const k = clamp((S.t - (S.waitAt - 3)) / 3, 0, 1);
-        sh.cx = lerp(sh.x, S.bob.x - sh.w / 2, k);
+        sh.cx = easeTo(sh.cx, lerp(sh.x, S.bob.x - sh.w / 2, k), 5, dt);   // eased, so a twitch never makes it jump
       }
-      for (const n of S.nibbles) if (S.t >= n && S.t - dt < n) S.lastNibble = S.t;
+      // nibbles: each kind of fish has its own pattern (see nibbleKind and nibbleOffset)
+      if (S.t >= S.nibbleAt && S.t < S.waitAt - 0.5) {
+        S.lastNibble = S.t; S.nibbled = true; S.nibbleAt = S.t + rand(1.8, 2.8);
+        splash(S.bob.x, 102, S.nibKind === 'heavy' ? 3 : 1); SFX.tick();
+        if (S.nibKind === 'heavy') mood('alert', 1.2);
+      }
+      if (S.bobDip > 0) S.bobDip = Math.max(0, S.bobDip - dt * 4);
       if (S.t >= S.waitAt) { setState('bite'); splash(S.bob.x, 102, 3); SFX.plop(); }
       break;
     }
@@ -1060,6 +1050,27 @@ function drawProps(P) {
   const bk = BUCKET.h / ART.bucket.naturalHeight;
   ctx.drawImage(tinted('bucket', ART.bucket, col), BUCKET.x, 86 - BUCKET.h, ART.bucket.naturalWidth * bk, BUCKET.h);
 }
+// eyes for a mood, painted over the head in layer px: happy/proud = closed upward arcs, sleepy = shut,
+// meh = half-lidded, angry = a cross brow
+function drawEyeMood(md, col) {
+  const [ex, ey] = CATP.eye, fur = mulHex('#55525c', col), ink = mulHex('#2c2a31', col);
+  ctx.save(); ctx.lineCap = 'round';
+  if (md === 'meh') {
+    ctx.beginPath(); ctx.ellipse(ex, ey, 11, 12, 0, 0, 7); ctx.clip();
+    ctx.fillStyle = fur; ctx.fillRect(ex - 12, ey - 13, 24, 13);
+    ctx.restore(); ctx.save();
+    ctx.strokeStyle = ink; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.moveTo(ex - 11, ey + 0.5); ctx.lineTo(ex + 11, ey - 0.5); ctx.stroke();
+  } else if (md === 'angry') {
+    ctx.strokeStyle = ink; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(ex - 12, ey - 15); ctx.lineTo(ex + 10, ey - 8); ctx.stroke();
+  } else {
+    ctx.fillStyle = fur; ctx.beginPath(); ctx.ellipse(ex, ey, 10.5, 11.5, 0, 0, 7); ctx.fill();
+    ctx.strokeStyle = ink; ctx.lineWidth = 2.2; ctx.beginPath();
+    if (md === 'sleepy') { ctx.moveTo(ex - 10, ey + 2); ctx.quadraticCurveTo(ex, ey + 6, ex + 10, ey + 1); }
+    else { ctx.moveTo(ex - 10, ey + 3); ctx.quadraticCurveTo(ex, ey - 6, ex + 10, ey + 2); }
+    ctx.stroke();
+  }
+  ctx.restore();
+}
 const CATANIM = { last: 0, head: 0, amp: 1, speed: 1, flickAt: 6, flick: -1, glanceAt: 4, glance: -1 };
 function easeTo(cur, target, rate, dt) { return cur + (target - cur) * (1 - Math.exp(-rate * dt)); }
 function drawPaintedCat(P) {
@@ -1073,8 +1084,13 @@ function drawPaintedCat(P) {
   const nib = S.state === 'waiting' && S.t - S.lastNibble < 0.3;
   const alert = pose.ears;
   const twitch = nib && !still ? Math.sin((S.t - S.lastNibble) * 60) * 6 : 0;
-  const earB = alert ? 0 + twitch : -13, earF = alert ? 3 + twitch * 0.7 : -10;
-  const earS = alert ? 1.12 : 0.97;
+  const md = moodNow(), me = now - MOOD.at;   // a mood (see mood()) overrides parts of the pose
+  let earB = alert ? 0 + twitch : -13, earF = alert ? 3 + twitch * 0.7 : -10;
+  let earS = alert ? 1.12 : 0.97;
+  if (md === 'sad' || md === 'snapped' || md === 'angry' || md === 'oops') { earB = -26; earF = -22; earS = 0.95; }
+  else if (md === 'happy' || md === 'proud' || md === 'shock' || md === 'alert') { earB = 2; earF = 5; earS = 1.12; }
+  else if (md === 'meh') { earB = -4; earF = -18; }
+  else if (md === 'sleepy') { earB = -18; earF = -15; }
 
   // head: idle looking about, an occasional glance down at the water, watches the bobber,
   // perks up on a bite, leans in while reeling, proud when the catch lands (positive = nose down)
@@ -1089,13 +1105,22 @@ function drawPaintedCat(P) {
   if (S.state === 'caught') headT = -6;
   if (THIEF.phase === 'perched' || THIEF.phase === 'arriving') headT = -9;
   if (S.state === 'landing') headT = S.fish && (S.fish.junk || S.fish.refuse) ? 5 : -7;
-  A.head = still ? headT : easeTo(A.head, headT, S.state === 'bite' ? 18 : 6, dt);
+  if (md === 'happy') headT = -8;
+  else if (md === 'proud') headT = -11;
+  else if (md === 'shock') headT = -7;
+  else if (md === 'meh') headT = 4 + (still || me > 1 ? 0 : Math.sin(me * 20) * 5 * (1 - me));    // a little head shake
+  else if (md === 'sad' || md === 'snapped') headT = 11;
+  else if (md === 'angry') headT = -2 + (still ? 0 : Math.sin(now * 28) * 1.2);
+  else if (md === 'oops') headT = 7;
+  else if (md === 'sleepy') headT = 10 + (still ? 0 : Math.sin(now * 0.9) * 2.5);
+  A.head = still ? headT : easeTo(A.head, headT, S.state === 'bite' || md === 'shock' || md === 'meh' ? 18 : 6, dt);
 
   // tail: a travelling wave through three pieces, with an occasional flick of the tip;
   // stands up and puffs on a bite, lashes while reeling
-  const lash = S.state === 'reeling', puff = pose.puff;
-  A.amp = easeTo(A.amp, puff ? 0.5 : lash ? 1.7 : 1, 4, dt);
-  A.speed = easeTo(A.speed, puff ? 3 : lash ? 2.4 : 1, 3, dt);
+  const lash = S.state === 'reeling' || md === 'angry', puff = pose.puff || md === 'shock';
+  const droop = md === 'sad' || md === 'snapped' || md === 'sleepy';
+  A.amp = easeTo(A.amp, puff ? 0.5 : md === 'angry' ? 2.6 : lash ? 1.7 : droop ? 0.3 : md === 'happy' || md === 'proud' ? 1.4 : 1, 4, dt);
+  A.speed = easeTo(A.speed, puff ? 3 : md === 'angry' ? 3.6 : lash ? 2.4 : droop ? 0.5 : md === 'happy' || md === 'proud' ? 1.8 : 1, 3, dt);
   A.phase = (A.phase || 0) + dt * 1.7 * A.speed;
   if (!still && A.flick < 0 && now > A.flickAt) { A.flick = now; A.flickAt = now + 4 + Math.random() * 5; }
   const fp = A.flick > 0 ? (now - A.flick) / 0.7 : 2;
@@ -1103,7 +1128,7 @@ function drawPaintedCat(P) {
   const flick = fp < 1 ? Math.sin(Math.PI * fp) : 0;
   const breathe = 0.75 + 0.25 * Math.sin(now * 0.31);
   const w = still ? 0 : A.amp * breathe;
-  const raise = puff ? 9 : 0;
+  const raise = puff ? 9 : md === 'proud' ? 5 : droop ? -7 : 0;
   const t0 = raise + w * 4 * Math.sin(A.phase);
   const t1 = raise * 0.6 + w * 6 * Math.sin(A.phase - 0.9) + flick * 8;
   const t2 = raise * 0.4 + w * 9 * Math.sin(A.phase - 1.8) + flick * 22;
@@ -1111,8 +1136,15 @@ function drawPaintedCat(P) {
 
   const rim = clamp((P.stars - 0.4) / 0.6, 0, 1);
   const feetX = CATP.x + 300 * k, feetY = 86;
+  // little hops: two for happy, three for proud, one big startle
+  let hop = 0;
+  if (!still) {
+    if ((md === 'happy' && me < 0.7) || (md === 'proud' && me < 1.05)) hop = -Math.abs(Math.sin(Math.PI * me / 0.35)) * 1.6;
+    else if (md === 'shock' && me < 0.45) hop = -Math.sin(Math.PI * me / 0.45) * 2.6;
+  }
   ctx.imageSmoothingEnabled = true;
   ctx.save();
+  ctx.translate(0, hop);
   // squash around the feet
   ctx.translate(feetX, feetY); ctx.scale(sx, sy); ctx.translate(-feetX, -feetY);
   ctx.translate(CATP.x, CATP.y); ctx.scale(k, k);
@@ -1126,7 +1158,9 @@ function drawPaintedCat(P) {
     ctx.save(); turn(CATP.earF, earF, earS); draw('earF'); ctx.restore();
     draw('head');
     // blink every few seconds (not with reduced motion)
-    if (draw.paint && !still && (now % 4.3) < 0.13) {
+    const eyeShut = md === 'sleepy' || ((md === 'happy' || md === 'proud') && me > 0.15 && me < 1.6);
+    if (draw.paint && (eyeShut || md === 'meh' || md === 'angry')) drawEyeMood(md, col);
+    else if (draw.paint && !still && (now % 4.3) < 0.13) {
       ctx.fillStyle = mulHex('#55525c', col);
       ctx.beginPath(); ctx.ellipse(CATP.eye[0], CATP.eye[1], 10, 11, 0, 0, 7); ctx.fill();
       ctx.strokeStyle = mulHex('#2c2a31', col); ctx.lineWidth = 2;
@@ -1145,7 +1179,8 @@ function drawPaintedCat(P) {
   ctx.restore();
   // the rod sits in the paw, wherever the squash put it
   HAND.x = feetX + (CATP.x + CATP.paw[0] * k - feetX) * sx;
-  HAND.y = feetY + (CATP.y + CATP.paw[1] * k - feetY) * sy;
+  HAND.y = feetY + (CATP.y + CATP.paw[1] * k - feetY) * sy + hop;
+  drawEmote(P, CATP.x + 300 * k, CATP.y - 1.5 + hop);
   // warm lamplight spilling onto the cat and the deck at night
   const lit = clamp(P.glow / 0.2, 0, 1);
   if (lit > 0.05) {
@@ -1340,17 +1375,17 @@ function drawFrenzy(P, now) {
   ctx.globalAlpha = 1;
 }
 
-/* ---------- Seagull thief: lands on the lamp after a catch, steals the dinner points unless shooed ---------- */
+/* ---------- Seagull thief: lands on the lamp after a catch and steals it unless shooed (the catch then does not count) ---------- */
 const THIEF = { phase: 'none', t: 0, pts: 0, made: false, x: 0, y: 0 };
 const PERCH = () => { const [gx] = lampGlass(); return [gx, 86 - LAMP.h + 0.3]; };   // the lamp's top, where the gull's feet go
 function maybeThief() {
   const P = paletteAt(hourOf(SAVE.gm));
-  if (!S.lastPts || !dinnerOpen(SAVE.gm) || P.gull < 0.5 || SAVE.weather === 'rain' || !sceneReady()) return;
-  if (Math.random() > 0.3) return;
-  Object.assign(THIEF, { phase: 'arriving', t: 0, pts: S.lastPts, made: S.lastMadeDinner, x: OX + VW + 10, y: 40 });
-  S.lastPts = 0; SFX.gull();
+  if (!S.lastSteal || P.gull < 0.5 || SAVE.weather === 'rain' || !sceneReady()) { S.lastSteal = null; return; }
+  if (Math.random() > 0.3) { S.lastSteal = null; return; }
+  Object.assign(THIEF, { phase: 'arriving', t: 0, steal: S.lastSteal, x: OX + VW + 10, y: 40 });
+  S.lastSteal = null; SFX.gull();
 }
-function shooGull() { THIEF.phase = 'leaving'; THIEF.t = 0; THIEF.stole = false; SFX.gull(); flash('Shoo! Walter keeps his dinner.', 1.8); }
+function shooGull() { THIEF.phase = 'leaving'; THIEF.t = 0; THIEF.stole = false; SFX.gull(); flash('Shoo! Walter keeps his catch.', 1.8); mood('proud', 1.6); }
 function thiefUpdate(dt) {
   if (THIEF.phase === 'none') return;
   THIEF.t += dt;
@@ -1362,11 +1397,10 @@ function thiefUpdate(dt) {
   } else if (THIEF.phase === 'perched') {
     THIEF.x = px; THIEF.y = py;
     if (THIEF.t > 2.8) {   // too slow: it takes the fish
-      const D = SAVE.dinner;
-      if (THIEF.made && D.done) { D.done = false; SAVE.streak = Math.max(0, SAVE.streak - 1); }
-      D.pts = Math.max(0, D.pts - THIEF.pts); persist();
+      const st = THIEF.steal;
+      if (st) { if (st.prev) SAVE.found[st.id] = st.prev; else delete SAVE.found[st.id]; persist(); updateFound(); }
       THIEF.phase = 'leaving'; THIEF.t = 0; THIEF.stole = true; SFX.gull();
-      flash('The gull stole it! -' + THIEF.pts + ' dinner.', 2.2);
+      flash('The gull stole the ' + (st ? st.name : 'fish') + '! It does not count.', 2.4); mood('angry', 2.6);
     }
   } else if (THIEF.phase === 'leaving') {
     THIEF.x = px - THIEF.t * 40; THIEF.y = py - THIEF.t * 22;
@@ -1419,6 +1453,164 @@ function drawJump(P) {
   ctx.restore();
 }
 
+/* ---------- Reading the water: signs show where fish are. Land a cast on one for a quicker bite,
+   and a fish that matches the sign: bubbles = small fry, a fin = something decent, a dark patch = something big ---------- */
+const SIGNS = { list: [], next: 2.5 };
+const SIGN_LIFE = { bubbles: [14, 22], fin: [10, 16], dark: [9, 14] };
+function signsUpdate(dt) {
+  const [a, b] = castRange();
+  SIGNS.list.forEach(g => { g.t += dt; });
+  SIGNS.list = SIGNS.list.filter(g => g.t < g.life && g.x >= a && g.x <= b);
+  SIGNS.next -= dt;
+  if (SIGNS.next <= 0 && SIGNS.list.length < 2 && sceneReady()) {
+    const r = Math.random(), kind = r < 0.5 ? 'bubbles' : r < 0.82 ? 'fin' : 'dark';
+    let x = 0;
+    for (let i = 0; i < 10; i++) { x = rand(a + 3, b - 2); if (!SIGNS.list.some(g => Math.abs(g.x - x) < 12) && Math.abs(x - S.bob.x) > 8) break; }
+    SIGNS.list.push({ kind, x, t: 0, life: rand(...SIGN_LIFE[kind]), seed: Math.random() * 9 });
+    SIGNS.next = rand(4, 9);
+  }
+}
+function signWeight(f, kind) {
+  if (!kind) return 1;
+  const big = f.size[1];
+  if (kind === 'bubbles') return big <= 25 && !f.junk ? 2.6 : 0.5;
+  if (kind === 'fin') return f.junk ? 0.3 : (f.rarity === 'Uncommon' || f.rarity === 'Rare') ? 2.6 : 1;
+  return (f.rarity === 'Rare' || f.rarity === 'Legendary' || f.chest) ? 3.2 : big <= 25 ? 0.4 : 1;   // dark patch
+}
+function drawSigns(P, now) {
+  for (const g of SIGNS.list) {
+    const a = clamp(Math.min(g.t / 1.2, (g.life - g.t) / 1.2), 0, 1);
+    if (a <= 0.01) continue;
+    const y = 102, t = reduceMotion ? 1 : now + g.seed;
+    ctx.save(); ctx.globalAlpha = a;
+    if (g.kind === 'bubbles') {
+      ctx.strokeStyle = P.wave; ctx.lineWidth = 0.35;
+      for (let i = 0; i < 5; i++) {
+        const ph = reduceMotion ? i / 5 : (t * 0.9 + i / 5) % 1;
+        const bx = g.x + Math.sin(i * 2.3 + g.seed) * 2.2, r = 0.35 + 0.45 * ph;
+        ctx.globalAlpha = a * (1 - ph * 0.7);
+        ctx.beginPath(); ctx.arc(bx, y - 0.2 - ph * 0.6, r, 0, 7); ctx.stroke();
+      }
+    } else if (g.kind === 'fin') {
+      const fx = g.x + (reduceMotion ? 0 : Math.sin(t * 0.7) * 3), dir = reduceMotion ? 1 : Math.cos(t * 0.7) >= 0 ? 1 : -1;
+      ctx.fillStyle = mulHex('#4a5866', sceneTint(P));
+      ctx.beginPath(); ctx.moveTo(fx - 1.6 * dir, y); ctx.quadraticCurveTo(fx - 0.2 * dir, y - 2.6, fx + 1.3 * dir, y - 2.4); ctx.quadraticCurveTo(fx + 0.6 * dir, y - 1.2, fx + 1.4 * dir, y); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = P.wave; ctx.lineWidth = 0.35; ctx.globalAlpha = a * 0.8;
+      ctx.beginPath(); ctx.moveTo(fx - 1.8 * dir, y + 0.1); ctx.lineTo(fx - 5 * dir, y + 0.9); ctx.moveTo(fx - 1.8 * dir, y + 0.1); ctx.lineTo(fx - 4.6 * dir, y - 0.5); ctx.stroke();
+    } else {
+      const pulse = reduceMotion ? 0.8 : 0.7 + 0.3 * Math.sin(t * 1.3);
+      ctx.globalAlpha = a * 0.32 * pulse; ctx.fillStyle = '#05121e';
+      ctx.beginPath(); ctx.ellipse(g.x, y + 1.6, 7, 1.6, 0, 0, 7); ctx.fill();
+      ctx.globalAlpha = a * 0.5; ctx.strokeStyle = P.wave; ctx.lineWidth = 0.3;
+      ctx.beginPath(); ctx.ellipse(g.x, y + 0.4, 4 + pulse * 2, 0.5 + pulse * 0.2, 0, 0, 7); ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+// where on the power bar each sign sits; with no signs out, one random sweet spot, so every cast has a target
+function castTargets() {
+  const [a, b] = castRange();
+  const t = SIGNS.list.filter(g => g.t < g.life - 1).map(g => clamp((g.x - a) / (b - a), 0, 1));
+  return t.length ? t : [rand(0.22, 0.92)];
+}
+function sparkle(x, y, n) {
+  for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; S.splashes.push({ x, y, vx: Math.cos(a) * 14, vy: Math.sin(a) * 10 - 14, t: 0, gold: true }); }
+}
+
+/* ---------- Twitching the bait and reading nibbles ---------- */
+function twitch() {
+  S.bobDip = 1; SFX.tick(); splash(S.bob.x, 102, 1);
+  S.twitches = S.twitches.filter(t => S.t - t < 1.8); S.twitches.push(S.t);
+  if (S.twitches.length >= TUNE.twitchSpook) {
+    // too much: the fish bolts, and a different one takes its time coming
+    flash('Too twitchy. It swam off.', 1.8); mood('oops', 1.6); splash(S.bob.x, 104, 4);
+    S.sign = null; S.twitches = []; newBiter(rand(4, 6));
+    return;
+  }
+  if (S.t - S.lastGoodTwitch >= TUNE.twitchGap) {
+    S.lastGoodTwitch = S.t;
+    const left = S.waitAt - S.t, floor = S.nibbled ? 0.6 : Math.max(0.6, S.nibbleAt - S.t + 0.9);
+    S.waitAt = S.t + Math.max(floor, left * TUNE.twitchSpeed);
+  }
+}
+function nibbleKind(f) {
+  if (f.junk) return 'odd';
+  if (f.size[1] >= 60 || f.rarity === 'Legendary') return 'heavy';
+  return f.size[1] <= 25 ? 'flutter' : 'tug';
+}
+const NIBBLE_TEXT = { flutter: 'Quick little flutters. Something small.', tug: 'Short, firm tugs.', heavy: 'A slow, heavy pull. Something big.', odd: 'It wobbles sideways. Odd.' };
+// how far the bobber moves (dx, dy in world px) a given time after a nibble starts
+function nibbleOffset(kind, t) {
+  if (t < 0) return [0, 0];
+  const m = reduceMotion ? 0.5 : 1;
+  if (kind === 'flutter') return t < 0.48 ? [0, 0.75 * m * Math.max(0, Math.sin(t * Math.PI * 2 / 0.16))] : [0, 0];
+  if (kind === 'tug') return t < 0.8 ? [0, 1.4 * m * Math.max(0, Math.sin(t * Math.PI * 2 / 0.4))] : [0, 0];
+  if (kind === 'heavy') return t < 1.1 ? [0, 2.4 * m * Math.sin(Math.PI * t / 1.1)] : [0, 0];
+  return t < 1.3 ? [1.4 * m * Math.sin(Math.PI * t / 1.3), 0.3 * m * Math.sin(Math.PI * 2 * t / 1.3)] : [0, 0];
+}
+
+/* ---------- Walter's moods: short reactions that move his head, ears, tail and eyes, with a little sign over his head ---------- */
+const MOOD = { kind: '', at: 0, until: 0 };
+function mood(kind, secs) { const n = performance.now() / 1000; MOOD.kind = kind; MOOD.at = n; MOOD.until = n + secs; }
+function moodNow() {
+  const n = performance.now() / 1000;
+  if (n < MOOD.until) return MOOD.kind;
+  if (S.state === 'idle' && S.t > 30 && THIEF.phase === 'none') return 'sleepy';
+  return '';
+}
+// the sign over his head, in world px; size about 3 px
+function drawEmote(P, x, y) {
+  const n = performance.now() / 1000, m = moodNow(), e = n - MOOD.at;
+  let kind = m;
+  if (S.state === 'bite') kind = 'bang';
+  else if (S.state === 'waiting' && S.t - S.lastNibble < 0.9) kind = 'what';
+  if (!kind || kind === 'alert' && !(S.state === 'waiting')) return;
+  const pop = reduceMotion ? 1 : clamp((kind === m ? e : 0.3) / 0.15, 0, 1);
+  const bob = reduceMotion ? 0 : Math.sin(n * 4) * 0.25;
+  ctx.save(); ctx.translate(x, y + bob); ctx.scale(pop, pop);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  const ink = '#2b2a33', cream = '#faf4e6';
+  const bubble = () => { ctx.fillStyle = cream; ctx.globalAlpha = 0.92; ctx.beginPath(); ctx.ellipse(0, -1.6, 2.3, 2.1, 0, 0, 7); ctx.fill(); ctx.globalAlpha = 1; };
+  if (kind === 'bang' || kind === 'shock') {
+    const k = kind === 'shock' ? 2 : 1;
+    for (let i = 0; i < k; i++) { const ox = (i - (k - 1) / 2) * 1.6; ctx.fillStyle = '#ffcf4a'; ctx.strokeStyle = ink; ctx.lineWidth = 0.25;
+      ctx.beginPath(); ctx.moveTo(ox - 0.55, -3.8); ctx.lineTo(ox + 0.55, -3.8); ctx.lineTo(ox + 0.25, -1.3); ctx.lineTo(ox - 0.25, -1.3); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(ox, -0.4, 0.42, 0, 7); ctx.fill(); ctx.stroke(); }
+  } else if (kind === 'what' || kind === 'alert') {
+    bubble(); ctx.strokeStyle = ink; ctx.lineWidth = 0.35;
+    ctx.beginPath(); ctx.arc(0, -2.3, 0.7, Math.PI * 1.1, Math.PI * 2.3); ctx.quadraticCurveTo(0, -1.4, 0, -1.1); ctx.stroke();
+    ctx.fillStyle = ink; ctx.beginPath(); ctx.arc(0, -0.45, 0.2, 0, 7); ctx.fill();
+  } else if (kind === 'happy') {
+    ctx.fillStyle = '#e8606a';
+    for (let i = 0; i < 2; i++) { const ox = i ? 1.3 : -1, oy = i ? -2.8 : -1.4, s = i ? 0.75 : 1, rise = reduceMotion ? 0 : -e * 0.8;
+      ctx.save(); ctx.translate(ox, oy + rise); ctx.scale(s, s); ctx.beginPath(); ctx.moveTo(0, 0.9); ctx.bezierCurveTo(-1.6, -0.2, -0.8, -1.5, 0, -0.6); ctx.bezierCurveTo(0.8, -1.5, 1.6, -0.2, 0, 0.9); ctx.fill(); ctx.restore(); }
+  } else if (kind === 'proud') {
+    ctx.fillStyle = '#ffd35a';
+    for (let i = 0; i < 3; i++) { const a = i * 2.1 + (reduceMotion ? 0 : n * 2), r = 2, s = 0.85 + 0.3 * Math.sin(n * 6 + i);
+      const sx = Math.cos(a) * r, sy = -2 + Math.sin(a) * r * 0.6;
+      ctx.beginPath(); for (let j = 0; j < 8; j++) { const rr = j % 2 ? s * 0.35 : s; const aa = j * Math.PI / 4; ctx.lineTo(sx + Math.cos(aa) * rr, sy + Math.sin(aa) * rr); } ctx.closePath(); ctx.fill(); }
+  } else if (kind === 'meh') {
+    bubble(); ctx.fillStyle = ink;
+    for (let i = 0; i < 3; i++) { if (!reduceMotion && e < 0.25 * (i + 1)) break; ctx.beginPath(); ctx.arc(-1 + i, -1.4, 0.28, 0, 7); ctx.fill(); }
+  } else if (kind === 'sad' || kind === 'oops') {
+    ctx.scale(1.4, 1.4); ctx.fillStyle = '#8fc7ea'; ctx.strokeStyle = '#3d6c8c'; ctx.lineWidth = 0.2;
+    const dy = reduceMotion ? 0 : Math.min(1, e * 0.8);
+    ctx.beginPath(); ctx.moveTo(1.4, -3.4 + dy); ctx.quadraticCurveTo(2.4, -1.9 + dy, 1.4, -1.5 + dy); ctx.quadraticCurveTo(0.4, -1.9 + dy, 1.4, -3.4 + dy); ctx.fill(); ctx.stroke();
+  } else if (kind === 'snapped' || kind === 'angry') {
+    ctx.strokeStyle = kind === 'angry' ? '#d8433a' : '#55525c'; ctx.lineWidth = 0.45;
+    if (kind === 'angry') {   // a cross-popping vein
+      for (const [sx, sy] of [[1, 1], [-1, 1], [1, -1], [-1, -1]]) { ctx.beginPath(); ctx.moveTo(sx * 0.35, -2 + sy * 0.35); ctx.quadraticCurveTo(sx * 1.2, -2 + sy * 0.3, sx * 1.1, -2 + sy * 1.1); ctx.stroke(); }
+    } else {                  // a little scribble cloud
+      ctx.beginPath(); for (let i = 0; i <= 24; i++) { const a = i / 24 * Math.PI * 4; ctx.lineTo(Math.cos(a) * (1.1 + i * 0.04), -2 + Math.sin(a) * (0.7 + i * 0.02)); } ctx.stroke();
+    }
+  } else if (kind === 'sleepy') {
+    ctx.fillStyle = ink; ctx.font = '700 2.4px "Shantell Sans", sans-serif';
+    for (let i = 0; i < 2; i++) { const ph = reduceMotion ? i * 0.5 : (n * 0.4 + i * 0.5) % 1; ctx.globalAlpha = 1 - ph; ctx.fillText('z', 0.6 + ph * 2, -0.8 - ph * 3.2); }
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+}
+
 /* ---------- Light on the water at night: moon, lamp and lighthouse ---------- */
 const LH = { x: 0, on: 0 };
 function drawReflections(P, now) {
@@ -1448,6 +1640,7 @@ function flashMsg() { return S.flashText && performance.now() / 1000 < S.flashUn
 
 /* ---------- Event clock ---------- */
 function eventsUpdate(dt) {
+  signsUpdate(dt);
   const now = performance.now() / 1000;
   jumpUpdate(dt);
   thiefUpdate(dt);
@@ -1594,6 +1787,7 @@ function draw() {
   ctx.globalAlpha = 1;
   const tnow = performance.now() / 1000;
   drawReflections(P, tnow);
+  drawSigns(P, tnow);
   drawTentacleCameo(P);
   drawFrenzy(P, tnow);
   drawJump(P);
@@ -1670,7 +1864,8 @@ function draw() {
     bx = S.bob.x; by = S.bob.y;
     if (S.state === 'waiting') {
       by = 102 + (reduceMotion ? 0 : Math.sin(S.t * 2.2) * 0.4);
-      if (S.t - S.lastNibble < 0.25) by += 1.2;
+      const [nx, ny] = nibbleOffset(S.nibKind, S.t - S.lastNibble);
+      bx += nx; by += ny + S.bobDip * 0.9;
     }
     if (S.state === 'bite') by = 104 + (reduceMotion ? 0 : Math.sin(S.t * 30) * 0.6);
     if (S.state === 'reeling' && S.jump) { const jp = jumpPos(); bx = jp.x; by = jp.y; }
@@ -1698,7 +1893,7 @@ function draw() {
 
   // splashes
   ctx.fillStyle = '#f4f1ea';
-  for (const p of S.splashes) { ctx.globalAlpha = 1 - p.t / 0.6; ctx.beginPath(); ctx.arc(p.x, p.y, 0.5, 0, 7); ctx.fill(); }
+  for (const p of S.splashes) { ctx.globalAlpha = 1 - p.t / 0.6; ctx.fillStyle = p.gold ? '#ffd35a' : '#f4f1ea'; ctx.beginPath(); ctx.arc(p.x, p.y, p.gold ? 0.6 : 0.5, 0, 7); ctx.fill(); }
   ctx.globalAlpha = 1;
   // rain
   if (rainy) { ctx.globalAlpha = 0.55; for (const r of S.rain) R(r.x, r.y, 0.6, 3, '#c9d6ea'); ctx.globalAlpha = 1; }
@@ -1712,7 +1907,7 @@ const ICONS = {
   dusk: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 6v3M4.5 10.5l2 1.5M19.5 10.5l-2 1.5"/></svg>',
   night: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>',
 };
-let lastIcon = '', lastPips = '';
+let lastIcon = '';
 function fmtTime(h) {
   const hh = Math.floor(h), mm = Math.floor((h - hh) * 60 / 10) * 10;
   const ampm = hh < 12 ? 'AM' : 'PM'; const h12 = hh % 12 === 0 ? 12 : hh % 12;
@@ -1723,39 +1918,39 @@ function updateFound() {
   $('foundCount').textContent = n + '/' + FISH_COUNT();
   $('journalBtn').setAttribute('aria-label', 'Open journal, ' + n + ' of ' + FISH_COUNT() + ' fish found');
 }
+// gold marks on the power bar: where the signs on the water are, or one sweet spot
+let lastTargets = '';
+function paintTargets(ts) {
+  const key = ts.map(t => t.toFixed(3)).join(',');
+  if (key === lastTargets) return; lastTargets = key;
+  const m = $('meter'); m.querySelectorAll('.tgt').forEach(e => e.remove());
+  for (const t of ts) { const e = document.createElement('div'); e.className = 'tgt'; e.style.left = ((t - TUNE.perfectWidth) * 100) + '%'; e.style.width = (TUNE.perfectWidth * 200) + '%'; m.insertBefore(e, $('meterFill').nextSibling); }
+}
 function updateHud() {
   const h = hourOf(SAVE.gm), per = periodOf(h);
   if (per !== lastIcon) { $('clockIcon').innerHTML = ICONS[per]; lastIcon = per; }
   $('clockText').textContent = 'Day ' + dayOf(SAVE.gm) + ' · ' + fmtTime(h) + (SAVE.weather === 'rain' ? ' · rain' : '');
   $('clock').classList.toggle('dark', per !== 'day');
 
-  const D = SAVE.dinner, open = dinnerOpen(SAVE.gm);
-  const pipKey = D.pts + '|' + D.done + '|' + open;
-  if (pipKey !== lastPips) {
-    lastPips = pipKey;
-    const pips = $('dinnerPips'); pips.innerHTML = '';
-    for (let i = 0; i < TUNE.dinnerGoal; i++) { const e = document.createElement('span'); e.className = 'pip' + (i < D.pts ? ' on' : ''); pips.appendChild(e); }
-    pips.setAttribute('aria-label', D.pts + ' of ' + TUNE.dinnerGoal + ' dinner points');
-  }
-  $('dinnerLabel').textContent = D.done ? 'DINNER SERVED' : open ? 'DINNER' : 'SNACK TIME';
-  $('dinnerPips').hidden = D.done || !open;
-  $('dinnerRight').textContent = D.done ? (SAVE.streak > 1 ? SAVE.streak + ' nights in a row' : '') : open ? 'by 8 PM' : 'dinner at 6 AM';
   const meterOn = S.state === 'charging' || S.state === 'reeling';
   $('meterRow').hidden = !meterOn; $('meter').hidden = !meterOn;
   let msg = '';
-  if (S.state === 'idle') msg = THIEF.phase === 'perched' ? 'A gull is eyeing your dinner! Tap the gull!' : flashMsg() || (frenzyOn(performance.now() / 1000) ? 'Gulls are diving! Cast near them.' : 'Hold anywhere to wind up. Let go to cast.');
+  if (S.state === 'idle' && moodNow() === 'sleepy' && !flashMsg()) msg = 'Walter is dozing. Cast to wake him.';
+  else if (S.state === 'idle') msg = THIEF.phase === 'perched' ? 'A gull is eyeing Walter\'s catch! Tap the gull!' : flashMsg() || (frenzyOn(performance.now() / 1000) ? 'Gulls are diving! Cast near them.' : 'Hold anywhere to wind up. Let go to cast.');
   else if (S.state === 'charging') {
     $('meterLabel').textContent = 'CAST POWER';
     $('meterRight').textContent = { near: 'close in', mid: 'medium', far: 'far out' }[depthFromPower(S.power)];
     $('meterFill').style.width = (S.power * 100) + '%';
     $('meterFill').style.background = S.power > 0.7 ? '#e0a23a' : '#2f7f7a';
     $('zoneSweet').hidden = true; $('zoneSnap').hidden = true; $('meterMark').hidden = true;
-    msg = 'Let go to cast.';
+    paintTargets(S.targets || []);
+    msg = SIGNS.list.length ? 'Let go on a gold mark to land on the sign.' : 'Let go on the gold mark for a perfect cast.';
   }
   else if (S.state === 'flying') msg = '';
-  else if (S.state === 'waiting') msg = 'Wait for the bobber to dip...';
+  else if (S.state === 'waiting') msg = flashMsg() || (S.t - S.lastNibble < 2.2 ? NIBBLE_TEXT[S.nibKind] : S.sign ? 'Right on the ' + ({ bubbles: 'bubbles', fin: 'fin', dark: 'dark patch' })[S.sign] + '. Tap to twitch, or wait...' : 'Tap to twitch the bait. Wait for the dip...');
   else if (S.state === 'bite') msg = 'TAP NOW!';
   else if (S.state === 'reeling') {
+    paintTargets([]);
     $('meterLabel').textContent = 'LINE TENSION';
     $('meterRight').textContent = Math.max(0, S.dist).toFixed(0) + ' m to go';
     $('meterFill').style.width = '0';
@@ -1779,7 +1974,7 @@ function updateHud() {
 }
 
 /* ---------- Catch card ---------- */
-function showCatch(f, size, isNew, isRecord, dinnerNote, gold, newGold, junkNote) {
+function showCatch(f, size, isNew, isRecord, _unused, gold, newGold, junkNote) {
   $('catchStamp').hidden = !(isNew || isRecord || newGold);
   $('catchStamp').textContent = newGold ? 'GOLDEN!' : isNew ? 'NEW ENTRY' : 'NEW BEST';
   $('catchStamp').classList.toggle('goldstamp', !!newGold);
@@ -1789,13 +1984,12 @@ function showCatch(f, size, isNew, isRecord, dinnerNote, gold, newGold, junkNote
   fillSketch($('catchSketch'), f, '[Drawing of ' + f.name + ' coming soon]', gold);
   $('catchName').textContent = (gold ? 'Golden ' : '') + f.name;
   $('catchFacts').innerHTML = '';
-  (f.junk ? [f.map ? 'Map ' + SAVE.mapPieces + '/4' : size + ' cm', dinnerNote] : [f.fight === 'kraken' ? 'Too big to measure' : size + ' cm', f.rarity, dinnerNote, f.id === DAILY ? "Today's fish" : null]).filter(Boolean).forEach(t => {
+  (f.junk ? [f.map ? 'Map ' + SAVE.mapPieces + '/4' : size + ' cm'] : [f.fight === 'kraken' ? 'Too big to measure' : size + ' cm', f.rarity, f.id === DAILY ? "Today's fish" : null, S.perfectCatch ? 'Perfect cast' : null]).filter(Boolean).forEach(t => {
     const s = document.createElement('span'); s.textContent = t; $('catchFacts').appendChild(s);
   });
-  $('catchNote').textContent = newGold && !isNew ? 'A golden one. Too shiny to eat? No. Still dinner.' : isNew ? f.note : 'Caught ' + SAVE.found[f.id].n + ' times now. Best: ' + SAVE.found[f.id].best + ' cm.';
+  $('catchNote').textContent = newGold && !isNew ? 'A golden one. Walter could not stop staring at it.' : isNew ? f.note : 'Caught ' + SAVE.found[f.id].n + ' times now. Best: ' + SAVE.found[f.id].best + ' cm.';
   if (junkNote) $('catchNote').textContent = junkNote;
   else if (f.junk && !isNew) $('catchNote').textContent = 'Another one. Found ' + SAVE.found[f.id].n + ' times now.';
-  if (dinnerNote === 'Dinner served!') $('catchNote').textContent += ' That makes dinner. ' + (SAVE.streak > 1 ? SAVE.streak + ' nights in a row.' : 'Purring.');
   $('catchOverlay').hidden = false;
   S.lastCatch = f.id;
   S.cardAt = performance.now();
@@ -1899,7 +2093,7 @@ if (new URLSearchParams(location.search).has('debug')) {
   mk('bite now', () => { if (S.state === 'waiting') S.waitAt = S.t; });
   mk('tentacle', () => { CAMEO.next = 0; });
   mk('frenzy', () => { FRENZY.next = 0; FRENZY.until = 0; });
-  mk('gull', () => { S.lastPts = 1; S.lastMadeDinner = false; const r = Math.random; Math.random = () => 0; maybeThief(); Math.random = r; });
+  mk('gull', () => { S.lastSteal = { id: 1, name: 'Pier Perch', prev: SAVE.found[1] ? JSON.parse(JSON.stringify(SAVE.found[1])) : { n: 1, best: 20, first: todayISO() } }; const r = Math.random; Math.random = () => 0; maybeThief(); Math.random = r; });
   mk('reset', () => { SAVE = freshSave(); persist(); updateFound(); });
 }
 
@@ -1941,10 +2135,10 @@ window.__tb = {
   setWeather(w) { SAVE.weather = w; },
   reset() { SAVE = freshSave(); persist(); updateFound(); },
   closeCard() { $('catchOverlay').hidden = true; setState('idle'); },
-  catPose, dinnerOpen,
+  catPose, SIGNS, MOOD, mood,
   cameo() { CAMEO.next = 0; },
   frenzy() { FRENZY.next = 0; FRENZY.until = 0; },
-  thief() { S.lastPts = 1; S.lastMadeDinner = false; const r = Math.random; Math.random = () => 0; maybeThief(); Math.random = r; },
+  thief() { S.lastSteal = { id: 1, name: 'Pier Perch', prev: SAVE.found[1] ? JSON.parse(JSON.stringify(SAVE.found[1])) : { n: 1, best: 20, first: todayISO() } }; const r = Math.random; Math.random = () => 0; maybeThief(); Math.random = r; },
   hideTitle() { $('title').hidden = true; },
 };
 </script>

@@ -1,24 +1,25 @@
 # Saltwhisker
 
-A painted fishing game for the browser. Walter, a tuxedo cat in a yellow sou'wester, fishes off the end of an ocean pier for his dinner and keeps a journal (the Tidebook) of everything he catches.
+A painted fishing game for the browser. Walter, a tuxedo cat in a yellow sou'wester, fishes off the end of an ocean pier and keeps a journal (the Tidebook) of everything he catches.
 
 Play it at https://games.shauna.digital/saltwhisker/
 
 ## How a session works
 
-1. **Cast.** Hold anywhere (or Space) to wind up. The power bar fills and falls back, so timing matters. Let go to cast. A short cast fishes close in, a long one fishes far out, and some fish only live at one depth.
-2. **Wait.** A fish shadow swims toward the bobber. Walter's ears twitch on a nibble. Tapping on a nibble scares the fish off.
-3. **Bite.** The bobber dips, his ears go up and his tail puffs. Tap within the bite window.
-4. **Reel.** Hold to reel, let go to ease off. Keep the tension marker in the green. The green is narrower for rarer fish, drifts for the eel and fades while the ghost is gone. Too much tension snaps the line, too much slack lets the fish go. Every fish fights in its own way (`fight` in `FISH`, notes in `FIGHTS`): steady bursts, quick darts, a sardine that sulks and goes limp, groupers that grumble then lunge, a tuna that runs, an eel that wriggles, heavy ones, and a ghost that fades out mid-fight. Every fish tires as the fight goes on.
-5. **Golden fish.** About 1 in 20 bites is a golden version, given away by a gold shimmer in the water. Golden catches get a star in the journal.
-6. **Odds and ends.** Not everything is a fish: a message in a bottle (its note tips you off about a fish you have not caught), four torn map pieces (all four reveal a sunken chest far out, whose lucky coin doubles golden fish), a rubber duck, an empty sardine tin and a single flip-flop. They sit in the journal after the fish with an Odds and Ends tag and are counted separately.
-7. **The Kraken.** A legendary that bites only at night with a long cast. The fight comes in three rounds, one per tentacle (heavy, then wriggling, then lunging), each stronger than the last. A huge shape rises under the bobber and Walter's tail stays puffed the whole time. Now and then at night one of Shauna's painted tentacles (`art/kraken-tentacle-1.webp`, `-2.webp`) rises far out at sea and sinks again (`CAMEO`); the same two paintings, as dark silhouettes, ring the shape under the bobber during the fight, and the bottle sometimes hints at him. `?debug` has a tentacle button.
-8. **Jumping fish.** Strong fish leap mid-fight. Tap as they jump to set the hook (they lose line); miss and they gain a little. The fight pauses while the fish is in the air and the line follows it; tension lands mid-green with a short grace before the next lunge.
-9. **Feeding frenzy.** Every few minutes in daylight, gulls dive over one spot for 30 seconds. Cast near them for quick bites.
-10. **Seagull thief.** Sometimes after a catch a gull lands on the lamp. Tap it within about 3 seconds or it steals that catch's dinner points.
-11. **Catch.** A journal card shows the fish. New fish get a "NEW ENTRY" stamp, bigger ones get "NEW BEST".
+1. **Read the water.** Signs come and go on the surface (`SIGNS`): bubbles mean small fry, a fin means something decent, a dark patch means something big. Landing on one brings a quicker bite and a fish that matches (`signWeight`).
+2. **Cast.** Hold anywhere (or Space) to wind up. The power bar fills and falls back, so timing matters. Gold marks on the bar show where the signs are (or one sweet spot when there are none). Let go on a mark for a perfect cast: a sparkle, and the fish tends to be bigger. A short cast fishes close in, a long one far out, and some fish only live at one depth.
+3. **Wait and twitch.** A quick tap twitches the bait; gentle twitches (`TUNE.twitchGap` apart) bring the fish sooner, too many in a row (`twitchSpook`) scare it off and another one takes its time. Hold to reel in and cast again. Each kind of fish nibbles its own way first (`nibbleKind`): quick flutters for small fish, short tugs, one slow heavy pull for big ones, a sideways wobble for odds and ends. Skip the small ones if you are after something big.
+4. **Bite.** The bobber dips, his ears go up and his tail puffs. Tap within the bite window.
+5. **Reel.** Hold to reel, let go to ease off. Keep the tension marker in the green. The green is narrower for rarer fish, drifts for the eel and fades while the ghost is gone. Too much tension snaps the line, too much slack lets the fish go. Every fish fights in its own way (`fight` in `FISH`, notes in `FIGHTS`): steady bursts, quick darts, a sardine that sulks and goes limp, groupers that grumble then lunge, a tuna that runs, an eel that wriggles, heavy ones, and a ghost that fades out mid-fight. Every fish tires as the fight goes on.
+6. **Golden fish.** About 1 in 20 bites is a golden version, given away by a gold shimmer in the water. Golden catches get a star in the journal.
+7. **Odds and ends.** Not everything is a fish: a message in a bottle (its note tips you off about a fish you have not caught), four torn map pieces (all four reveal a sunken chest far out, whose lucky coin doubles golden fish), a rubber duck, an empty sardine tin and a single flip-flop. They sit in the journal after the fish with an Odds and Ends tag and are counted separately.
+8. **The Kraken.** A legendary that bites only at night with a long cast. The fight comes in three rounds, one per tentacle (heavy, then wriggling, then lunging), each stronger than the last. A huge shape rises under the bobber and Walter's tail stays puffed the whole time. Now and then at night one of Shauna's painted tentacles (`art/kraken-tentacle-1.webp`, `-2.webp`) rises far out at sea and sinks again (`CAMEO`); the same two paintings, as dark silhouettes, ring the shape under the bobber during the fight, and the bottle sometimes hints at him. `?debug` has a tentacle button.
+9. **Jumping fish.** Strong fish leap mid-fight. Tap as they jump to set the hook (they lose line); miss and they gain a little. The fight pauses while the fish is in the air and the line follows it; tension lands mid-green with a short grace before the next lunge.
+10. **Feeding frenzy.** Every few minutes in daylight, gulls dive over one spot for 30 seconds. Cast near them for quick bites.
+11. **Seagull thief.** Sometimes after a catch a gull lands on the lamp. Tap it within about 3 seconds or it steals the catch, which then does not count (a new entry comes back out of the Tidebook).
+12. **Catch.** A journal card shows the fish. New fish get a "NEW ENTRY" stamp, bigger ones get "NEW BEST".
 
-**Dinner.** Each day, Walter needs 4 dinner points before 8 PM. Bigger fish are worth more (1 to 3 points). Some fish he refuses to eat (the crab, anything wearing a hat, the legendaries). Fish caught after 8 PM are snacks. Make dinner every evening to build a streak.
+**Walter's moods.** Short reactions (`mood()`, `MOOD`) move his head, ears, tail and eyes and put a little sign over his head: hearts and two hops for a catch, sparkles and three hops for a new entry, best or golden fish, a head shake and "..." for odds and ends, drooping ears and a tear for an escape, a scribble cloud for a snapped line, an angry vein when a gull steals, "!!" and a jump for the Kraken, "?" on a nibble, "!" on a bite, and he dozes off with "z z" after 30 idle seconds. Drawn in code for now; painted expression heads can replace the eye shapes later.
 
 **Time and weather.** The clock follows your real local time, and Day 1 is the day you first played. Day, dusk and night each have their own fish. About 30% of calendar days are rainy, and they are the same days for every player (picked from the date, `weatherFor`), which brings out rain-only fish. One "fish of the day" is the same for everyone on a calendar date and is more likely to bite. One fish only appears on real-world Sundays.
 
@@ -28,9 +29,9 @@ Everything is in `index.html`: canvas plus plain JavaScript, no build step, no d
 
 Sections inside the script, in order:
 
-- `TUNE`: every tuning knob (clock speed, cast timing, bite window, reel and tension rates, dinner goal). Change numbers here, not in the logic.
+- `TUNE`: every tuning knob (clock speed, cast timing, bite window, reel and tension rates, perfect cast, signs, twitching). Change numbers here, not in the logic.
 - `FISH`: the 16 fish (the Kraken is 16) plus the odds and ends (ids 101 to 106, `junk: true`). Each has time of day, depth, weight (how often it bites), size range, strength, rarity, the cat's journal note, the hint shown before it's found, and optional `weather`, `sunday` or `refuse`.
-- Save: local storage key `saltwhisker.save` (clock, weather, journal, dinner, streak).
+- Save: local storage key `saltwhisker.save` (clock, weather, journal, map pieces, lucky coin). Older saves may still carry unused dinner and streak fields.
 - Camera: `CAM` is the focus box (cat, rod, bobber, near water). The game zooms so that box always fits and fills the rest of the screen with more world. Portrait shows more water, landscape shows more sea and sky.
 - Walter's pixel stand-in (shown only while the paintings load): `CAT_MAP` is the 16 by 16 sprite as text, one letter per color. `catPose()` and `catPixels()` add the ear, tail and crouch cues. At night a soft rim light keeps his outline readable.
 - Draw, HUD, catch card, journal, debug panel, loop, playtest hooks.

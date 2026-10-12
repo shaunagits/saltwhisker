@@ -976,6 +976,18 @@ const ART = {
   body: loadImg('art/cat-body.webp'), head: loadImg('art/cat-head.webp'), earB: loadImg('art/cat-ear-back.webp'), earF: loadImg('art/cat-ear-front.webp'),
   tail1: loadImg('art/cat-tail-1.webp'), tail2: loadImg('art/cat-tail-2.webp'), tail3: loadImg('art/cat-tail-3.webp'),
 };
+// Expression heads: the same head cut from Shauna's face paintings (tools/build-faces.py). One per
+// feeling; the plain head is the calm face. FACE_FOR maps a mood (see mood()) to a painting.
+const FACES = ['happy', 'proud', 'surprised', 'unimpressed', 'sad', 'grumpy', 'sleepy'];
+for (const f of FACES) ART['face-' + f] = loadImg('art/cat-face-' + f + '.webp');
+const FACE_FOR = { happy: 'happy', proud: 'proud', shock: 'surprised', alert: 'surprised', meh: 'unimpressed', sad: 'sad', oops: 'sad', snapped: 'grumpy', angry: 'grumpy', sleepy: 'sleepy' };
+// the face to show right now: the mood's, or surprise on a bite, or a glance of surprise on a nibble
+function faceNow(md) {
+  if (S.state === 'bite') return 'surprised';
+  if (md && FACE_FOR[md]) return FACE_FOR[md];
+  if (S.state === 'waiting' && S.t - S.lastNibble < 0.5) return 'surprised';
+  return '';
+}
 const imgReady = i => i.complete && i.naturalWidth > 0;
 function sceneReady() { return Object.values(ART).every(imgReady); }
 // Placement in world pixels. Pier strip: deck top at image row 163 sits on y 86, its end at image x 4083 sits on x 108.
@@ -1156,10 +1168,14 @@ function drawPaintedCat(P) {
     ctx.save(); turn(CATP.head, A.head);
     ctx.save(); turn(CATP.earB, earB, earS); draw('earB'); ctx.restore();
     ctx.save(); turn(CATP.earF, earF, earS); draw('earF'); ctx.restore();
-    draw('head');
+    // a painted expression replaces the whole head while a mood runs; the code-drawn eye shapes
+    // only stand in while that painting is still loading
+    const face = faceNow(md), faceIm = face && ART['face-' + face];
+    draw(faceIm && imgReady(faceIm) ? 'face-' + face : 'head');
     // blink every few seconds (not with reduced motion)
     const eyeShut = md === 'sleepy' || ((md === 'happy' || md === 'proud') && me > 0.15 && me < 1.6);
-    if (draw.paint && (eyeShut || md === 'meh' || md === 'angry')) drawEyeMood(md, col);
+    if (face && faceIm && imgReady(faceIm)) { /* the painting carries the expression */ }
+    else if (draw.paint && (eyeShut || md === 'meh' || md === 'angry')) drawEyeMood(md, col);
     else if (draw.paint && !still && (now % 4.3) < 0.13) {
       ctx.fillStyle = mulHex('#55525c', col);
       ctx.beginPath(); ctx.ellipse(CATP.eye[0], CATP.eye[1], 10, 11, 0, 0, 7); ctx.fill();

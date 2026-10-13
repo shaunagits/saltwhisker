@@ -75,4 +75,9 @@ To rebuild them from new images: key each one with `python3 tools/key-magenta.py
 
 **Fish paintings** live in `art/fish/` as `fish-001-pier-perch.webp` and so on (keyed with `key-magenta.py --sprite`, then resized to 720 px wide). Add each new one to `FISH_ART` in `index.html`; fish without a painting show the dashed placeholder.
 
+**Replacing art:** every painting URL carries `ART_V` (top of the script). The server lets browsers keep art for a day and reuse it for a week, so when a file in `art/` changes, bump `ART_V` and the matching `?v=` on the preload links in the `<head>`, or players keep seeing the old painting. The loading screen waits for every scene painting, the water and the clouds before it lifts.
+
+**Walter's key poses** (`art/cat-pose-*.webp`: windup, cast, startle, reel, triumph) come from `tools/build-poses.py`, which lines each painting up on the sitting puppet's feet and prints the `POSES` offsets and paw spots. The game cross-fades into a pose at the big moments and back; a missing pose just keeps the puppet.
+
+
 The fish and Walter drawings may be hand-drawn by Shauna and dropped in later. Specs live on the design board: 1200 by 900 px transparent PNG per fish, named like `fish-007-grumble-grouper.png`.
